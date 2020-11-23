@@ -1,33 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-import base64
-import imageio
-import tempfile
-import IPython
 import matplotlib
-matplotlib.use("macOSX")
-from pyglet.gl import *
-import pyvirtualdisplay
 
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-import PIL.Image
-import tensorflow as tf
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import utils
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import Dropout, Dense
-from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPooling2D, BatchNormalization
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import Sequential, load_model
+matplotlib.use("macOSX")
+
 from tf_agents.agents.dqn import dqn_agent
-from tf_agents.drivers import dynamic_step_driver
-from tf_agents.environments import suite_gym
-from tf_agents.environments import tf_py_environment
-from tf_agents.eval import metric_utils
-from tf_agents.metrics import tf_metrics
 from tf_agents.networks import q_network
 from tf_agents.policies import random_tf_policy
 from tf_agents.policies import policy_saver

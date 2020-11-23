@@ -1,14 +1,12 @@
-from mss import mss
-from PIL import Image
-import tensorflow as tf
 import cv2
-from tensorflow import keras
-import pytesseract as pt
 import numpy as np
-from PIL import Image,ImageOps
-from tensorflow.keras.models import Sequential, load_model
+import pytesseract as pt
+import tensorflow as tf
+from PIL import Image
+from mss import mss
+from tensorflow.keras.models import load_model
+
 from screen_classifier.game_stage import GameStage
-import matplotlib.pyplot as plt
 
 weight_path = "screen_classifier/nq_screen_weight.h5"
 loaded_model = load_model(weight_path)
@@ -97,90 +95,3 @@ def recogonise_digit_image(cropped):
         return digits
     except:
         return 0
-
-
-# b = capture_window()
-# output3 = extract_coin_reward_game_over(b)
-# output = extract_kill_reward_game_over(b)
-# output2 = extract_jewel_reward_game_over(b)
-# print(str(output) + "  ::::  " + str(output2) + ":::: " + str(output3))
-
-
-# def convert_to_np_array(img):
-#     arr = keras.preprocessing.image.img_to_array(img)
-#     return arr
-#
-#
-# def extract_string(img):
-#     img = img.convert("L")
-#     img = ImageOps.invert(img)
-#     # img.show()
-#     threshold = 240
-#     table = []
-#     pixel_array = img.load()
-#     for y in range(img.size[1]):  # binaryzate it
-#         List = []
-#         for x in range(img.size[0]):
-#             if pixel_array[x, y] < threshold:
-#                 List.append(0)
-#             else:
-#                 List.append(255)
-#         table.append(List)
-#
-#     img = Image.fromarray(np.array(img, dtype="uint8"))  # load the image from array.
-#     img.show()
-#     a = pt.image_to_string(img)
-#     print(a)
-#     return a
-
-    # cv2.imshow('image', img)
-    # cv2.waitKey(0)
-
-    # cropped = tf.image.crop_to_bounding_box(np_img, 40, 1120, h, w)
-    # img = tf.keras.preprocessing.image.array_to_img(cropped)
-    # gray = cv2.medianBlur(img, 3)
-    # image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
-    # image = cv2.medianBlur(image, 5)
-    # image = cv2.Canny(image, 100, 200)
-    # kernel = np.ones((5, 5), np.uint8)
-    # image = cv2.erode(image, kernel, iterations=1)
-    # plt.imshow(image)
-    # plt.show()
-
-# gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# # gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-# gray = cv2.medianBlur(gray, 3)
-# a = pt.image_to_string(gray)
-# print(a)
-
-# b = convert_to_np_array(b)
-# c = extract_string(b)
-
-# b = capture_window()
-# plt.imshow(b)
-# plt.show()
-# print(which_stage(b))
-
-# b = convert_to_np_array(b)
-# c = extract_string(b)
-
-    # plt.imshow(cropped)
-    # plt.show()
-    # np_img = np.array(cropped, dtype=np.uint8)
-    # cropped = np.flip(np_img[:, :, :3], 2)
-    # i = Image.fromarray(cropped.astype('uint8'), 'RGB')
-    # plt.imshow(cropped)
-    # plt.show()
-    # data = np.zeros((h, w, 3), dtype=np.uint8)
-    # data[0:256, 0:256] = [255, 0, 0]  # red patch in upper left
-    # img = Image.fromarray(cropped)
-
-# c = extract_string(np.float32(b))
-# import pyscreenshot as ImageGrab
-# img = ImageGrab.grab(bbox=(40, 30, 1300, 730))
-# arr = keras.preprocessing.image.img_to_array(img)
-# return arr
-# # img = tf.image.decode_image(img, channels=3)
-# # img = tf.cast(img, tf.float32) / 255.0
-# # img = img / 255.0
-# # img.show

@@ -1,19 +1,11 @@
-from typing import Any
+import time
 
 from tf_agents.environments import py_environment
-import numpy as np
-from tf_agents.trajectories import time_step as ts
-from tf_agents.environments import py_environment
-from tf_agents.environments import tf_environment
-from tf_agents.environments import tf_py_environment
-from tf_agents.environments import utils
 from tf_agents.specs import array_spec
-from tf_agents.environments import wrappers
-from tf_agents.environments import suite_gym
 from tf_agents.trajectories import time_step as ts
-from nq_screen_extractor import *
+
 from directkeys import *
-import time
+from nq_screen_extractor import *
 
 
 class NQEnv(py_environment.PyEnvironment):
@@ -159,33 +151,3 @@ class NQEnv(py_environment.PyEnvironment):
           for key in keys_to_press[action]:
               PressKey(key)
               time.sleep(0.05)
-
-
-      # if action == 0 else time.sleep(0.2)
-      # for key in keys_to_press[action]:
-      #     ReleaseKey(key)
-    #state & reward
-    #state (stage, characters, kill
-    #needs to create a neural network to clasify screenshots,
-    # 1 initialisation screen (what character),
-    # 2 what stage,
-    # 3 playing game
-    # 4 game over screen (kill count, jewel, and token)
-
-
-    # self._state
-    #
-    # if action == 1:
-    #   self._episode_ended = True
-    # elif action == 0:
-    #   new_card = np.random.randint(1, 11)
-    #   self._state += new_card
-    # else:
-    #   raise ValueError('`action` should be 0 or 1.')
-    #
-    # if self._episode_ended or self._state >= 21:
-    #   reward = self._state - 21 if self._state <= 21 else -21
-    #   return ts.termination(np.array([self._state], dtype=np.int32), reward)
-    # else:
-    #   return ts.transition(
-    #       np.array([self._state], dtype=np.int32), reward=0.0, discount=1.0)

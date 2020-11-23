@@ -108,6 +108,11 @@ print(np.argmax(matrix))
 ############### Training ############### Training ############### Training ###############
 
 
+
+
+
+
+# Confusion matrix part is copied from: https://colab.research.google.com/drive/1pdzZ2MB2g6CT_-bT0D0bO2IKyghOhlM_
 # from sklearn.metrics import confusion_matrix
 # import itertools
 #

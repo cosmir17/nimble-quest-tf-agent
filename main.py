@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+import matplotlib.pyplot as plt
 import matplotlib
-
 matplotlib.use("macOSX")
 
+from tf_agents.environments import tf_py_environment
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.networks import q_network
 from tf_agents.policies import random_tf_policy

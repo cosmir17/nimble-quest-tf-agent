@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+import matplotlib.pyplot as plt
 import matplotlib
-
 matplotlib.use("macOSX")
 
+from tf_agents.environments import tf_py_environment
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.networks import q_network
 from tf_agents.policies import random_tf_policy
@@ -20,7 +21,7 @@ tf.compat.v1.enable_v2_behavior()
 tempdir = "nimble_quest_weight_70"
 
 num_iterations = 100  # @param {type:"integer"}
-initial_collect_steps = 100  # @param {type:"integer"}
+initial_collect_steps = 30  # @param {type:"integer"}
 collect_steps_per_iteration = 1000  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
 batch_size = 1  # @param {type:"integer"}

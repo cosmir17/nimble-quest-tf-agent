@@ -51,13 +51,19 @@ class NQEnv(py_environment.PyEnvironment):
     img_resized = tf.image.resize(i, (250, 250))
     self._state = img_resized
 
-    if stage_enum == GameStage.game_over:
-        #add another cnn to verify quit is selected
+    if stage_enum == GameStage.game_over and not is_back_button_selected(i):
+        self.previous_stage = GameStage.game_over
+        if action == 4 or action == 5:
+            return ts.transition(self._state, reward=0.0, discount=0.05)
+        self.press_key(action)
+        return ts.transition(self._state, reward=0.0, discount=0.00)
+
+    if stage_enum == GameStage.game_over and is_back_button_selected(i):
         kill_reward = extract_kill_reward_game_over(i) / 5
         jewel_reward = extract_jewel_reward_game_over(i) / 50
         reward_game_over = kill_reward + jewel_reward
         print("game-over: k: " + str(kill_reward) + "    jewel: " + str(jewel_reward) + "   total: " + str(reward_game_over))
-        time.sleep(0.30)
+        time.sleep(0.10)
         self.press_spacebar()
         self.previous_stage = GameStage.game_over
         self._episode_ended = True
@@ -70,8 +76,7 @@ class NQEnv(py_environment.PyEnvironment):
         return ts.transition(self._state, reward=0.0, discount=0.0)
 
     if stage_enum == GameStage.starting_page:
-        PressKey(spacebar)
-        time.sleep(0.10)
+        self.press_spacebar()
         self.previous_stage = GameStage.starting_page
         return ts.transition(self._state, reward=0.0, discount=0.0)
 
@@ -152,4 +157,4 @@ class NQEnv(py_environment.PyEnvironment):
       if action != 5:
           for key in keys_to_press[action]:
               PressKey(key)
-              time.sleep(0.05)
+      time.sleep(0.05)

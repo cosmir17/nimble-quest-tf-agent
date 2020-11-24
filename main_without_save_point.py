@@ -21,10 +21,10 @@ tf.compat.v1.enable_v2_behavior()
 tempdir = "nimble_quest_weight_70"
 
 num_iterations = 100  # @param {type:"integer"}
-initial_collect_steps = 30  # @param {type:"integer"}
+initial_collect_steps = 1000  # @param {type:"integer"}
 collect_steps_per_iteration = 1000  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
-batch_size = 1  # @param {type:"integer"}
+batch_size = 1000  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
 log_interval = 50  # @param {type:"integer"}
 num_eval_episodes = 10  # @param {type:"integer"}

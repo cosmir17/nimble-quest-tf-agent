@@ -120,6 +120,11 @@ def recognise_digit_image(cropped, color_range=None):
             roi = cv2.bitwise_not(roi)
             roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
             score = score + predict_from_cnn(roi)
+    score = score.strip()
+    if score == "":
+        score = 0
+    else:
+        score = int(score)
     return score
 
 

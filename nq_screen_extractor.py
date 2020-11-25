@@ -7,10 +7,12 @@ import matplotlib.pyplot as plt
 from mss import mss
 from tensorflow.keras.models import load_model
 from imutils import grab_contours, contours
-from screen_classifier.game_stage import GameStage
+from screen_classifier.stage_classifier.game_stage import GameStage
 
-weight_path = "screen_classifier/nq_screen_weight.h5"
-loaded_model = load_model(weight_path)
+stage_weight_path = "screen_classifier/stage_classifier/nq_screen_weight.h5"
+score_weight_path = "screen_classifier/score_classifier/nq_score_weight.h5"
+stage_model = load_model(stage_weight_path)
+score_model = load_model(score_weight_path)
 
 # 1261 X 702
 def capture_window():
@@ -25,9 +27,23 @@ def capture_window():
 
 def which_stage(img):
     img_resized = tf.image.resize(img, (100, 100))
-    prediction = loaded_model.predict(np.array([img_resized]))
+    prediction = stage_model.predict(np.array([img_resized]))
     found = np.argmax(prediction)
     return GameStage(found)
+
+
+def read_score(img):
+    img = tf.image.resize(img, (35, 35))
+    # img = tf.keras.preprocessing.image.img_to_array(img)
+    img = np.array(img) / 255.0
+    cv2.imshow('original_image', img)
+    cv2.waitKey(0)
+    prediction = score_model.predict(np.array([img]))
+    found = np.argmax(prediction)
+    found = str(found)
+    if found == "10":
+        found = ""
+    return found
 
 
 def capture_window_raw():
@@ -47,13 +63,13 @@ def convert_raw_scren_to_tf_np(sct_img):
 def extract_kill_reward_game_over(np_img):
     w, h = 170, 50
     cropped = tf.image.crop_to_bounding_box(np_img, 282, 460, h, w)
-    return recogonise_digit_image(cropped)
+    return recognise_digit_image(cropped)
 
 
 def extract_kill_game_in_progress(np_img):
     w, h = 160, 60
     cropped = tf.image.crop_to_bounding_box(np_img, 30, 1090, h, w)
-    return recogonise_digit_image(cropped)
+    return recognise_digit_image(cropped)
 
 
 def extract_jewel_game_in_progress(np_img):
@@ -61,34 +77,30 @@ def extract_jewel_game_in_progress(np_img):
     cropped = tf.image.crop_to_bounding_box(np_img, 100, 1110, h, w)
     color_range = [(36, 25, 25), (86, 255, 255)]
     # color_range = [(36, 25, 25), (86, 255, 255)]
-    return recogonise_digit_image(cropped, True, color_range)
+    return recognise_digit_image(cropped, True, color_range)
 
 
 def extract_char_count_in_progress(np_img):
     w, h = 100, 45
     cropped = tf.image.crop_to_bounding_box(np_img, 30, 40, h, w)
     color_range = [(0, 0, 0), (0, 0, 0)]
-    return recogonise_digit_image(cropped, False, color_range)
+    return recognise_digit_image(cropped, False, color_range)
 
 
 def extract_jewel_reward_game_over(np_img):
     w, h = 140, 35
     cropped = tf.image.crop_to_bounding_box(np_img, 349, 427, h, w)
-    return recogonise_digit_image(cropped)
+    return recognise_digit_image(cropped)
 
 
 def extract_coin_reward_game_over(np_img):
     w, h = 100, 45
     cropped = tf.image.crop_to_bounding_box(np_img, 30, 635, h, w)
-    return recogonise_digit_image(cropped)
+    return recognise_digit_image(cropped)
 
 
-#issue no.1 pytesseract doesn't recognise nq digits
-#issue no.2 opencv doesn't extract digits well when the bckground is not obvious
-def recogonise_digit_image(cropped, remove_first_obj=False, color_range=None):
-
+def recognise_digit_image(cropped, remove_first_obj=False, color_range=None):
     img = tf.keras.preprocessing.image.array_to_img(cropped)
-    # img = tf.keras.preprocessing.image.img_to_array(cropped)
 
     if color_range is not None:
         img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
@@ -97,14 +109,11 @@ def recogonise_digit_image(cropped, remove_first_obj=False, color_range=None):
     else:
         gray = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    cv2.imshow('original_image', thresh)
-    cv2.waitKey(0)
     mask = np.zeros(thresh.shape, dtype=np.float32)
     cnts = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
     (cnts, _) = contours.sort_contours(cnts, method="left-to-right")
-    concatenated_img = None
-    roi_number = 0
+    score = ""
     for c in cnts:
         area = cv2.contourArea(c)
         if area < 800 and area > 100:
@@ -112,60 +121,9 @@ def recogonise_digit_image(cropped, remove_first_obj=False, color_range=None):
             roi = 255 - thresh[y:y + h, x:x + w]
             cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)
             roi = cv2.bitwise_not(roi)
-            roi_height, _ = np.array(roi).shape
-            gap_img = np.zeros((roi_height, 5), dtype=np.uint8)
-            cv2.imshow('in_a_loop' + str(roi_number), roi)
-            cv2.waitKey(0)
-            if remove_first_obj and concatenated_img is None:
-                concatenated_img = np.zeros((roi_height, 100), dtype=np.uint8)
-                continue
-            if concatenated_img is None:
-                concatenated_img = np.zeros((roi_height, 100), dtype=np.uint8)
-            concatenated_img = hconcat_resize_min([concatenated_img, roi, gap_img])
-            roi_number += 1
-    roi_height, _ = concatenated_img.shape
-    concatenated_img_2 = np.zeros((roi_height, 100), dtype=np.uint8)
-
-    img = cv2.hconcat([concatenated_img, concatenated_img_2])
-    cv2.imshow('final', img)
-    cv2.waitKey(0)
-    h, w = img.shape
-    concatenated_img_3 = np.zeros((h, w), dtype=np.uint8)
-    img = cv2.vconcat([img, concatenated_img_3])
-    img = cv2.vconcat([concatenated_img_3, img])
-
-    img = cv2.bilateralFilter(img, 9, 75, 75)
-    img_bw = cv2.bitwise_not(img)
-
-
-    multiple_digits_config = '--oem 3 --psm 6 outputbase digits'
-    single_digit_config = '--psm 13 --oem 3 outputbase digits -c tessedit_char_whitelist=0123456789'
-
-    digit_string = digit_image_string(img_bw, multiple_digits_config)
-    if not digit_string.isnumeric() and digit_string != "":
-        print("digit_string contains non-numeric data : " + digit_string)
-        digit_string = digit_image_string(img_bw, single_digit_config)
-    try:
-        digits = int(digit_string)
-        return digits
-    except:
-        return 0
-
-
-def digit_image_string(img_bw, multiple_digits_config):
-    digit_string = pt.image_to_string(img_bw, config=multiple_digits_config)
-    print("recognised string: " + digit_string)
-    digit_string = digit_string.replace("\n", "")
-    digit_string = digit_string.replace("\f", "")
-    return digit_string
-
-
-def hconcat_resize_min(im_list, interpolation=cv2.INTER_CUBIC):
-    h_min = min(im.shape[0] for im in im_list)
-    im_list_resize = [cv2.resize(im, (int(im.shape[1] * h_min / im.shape[0]), h_min), interpolation=interpolation)
-                      for im in im_list]
-    return cv2.hconcat(im_list_resize)
-
+            roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
+            score = score + read_score(roi)
+    return score
 
 def is_back_button_selected(np_img):
     back_button_color = np_img[585][700]
@@ -183,7 +141,7 @@ sc = capture_window()
 # selected = extract_char_count_in_progress(sc)
 # selected = is_back_button_selected(sc)
 selected = extract_jewel_game_in_progress(sc)
-print(selected)
+print("score: " + selected)
 
 # cnts = grab_contours(cnts)
 # digitCnts = []

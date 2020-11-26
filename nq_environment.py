@@ -14,15 +14,16 @@ class NQEnv(py_environment.PyEnvironment):
 
   def __init__(self):
     self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
-    self._observation_spec = array_spec.BoundedArraySpec(shape=(250, 250, 3), dtype=np.float32, name='observation')
+    self._observation_spec = array_spec.BoundedArraySpec(shape=(70, 70, 3), dtype=np.float32, name='observation')
     sn = capture_window()
-    sn = tf.image.resize(sn, (250, 250))
+    sn = tf.image.resize(sn, (70, 70))
     self._state = keras.preprocessing.image.img_to_array(sn)
     self._episode_ended = False
     stage_enum = which_stage(sn)
     self.previous_stage = stage_enum
     self.previous_kill_count = 0
     self.previous_jewel_count = 0
+    self.interval_loop = 0
 
   def action_spec(self):
     return self._action_spec
@@ -35,11 +36,12 @@ class NQEnv(py_environment.PyEnvironment):
     sn = capture_window()
     stage_enum = which_stage(sn)
     self.previous_stage = stage_enum
-    sn = tf.image.resize(sn, (250, 250))
+    sn = tf.image.resize(sn, (70, 70))
     self._state = keras.preprocessing.image.img_to_array(sn)
     self._episode_ended = False
     self.previous_kill_count = 0
     self.previous_jewel_count = 0
+    self.interval_loop = 0
     return ts.restart(self._state)
 
   def _step(self, action):
@@ -51,7 +53,7 @@ class NQEnv(py_environment.PyEnvironment):
     stage_enum = which_stage(i)
     print("action: " + str(actions[action]) + "  which stage: " + stage_enum.name)
 
-    img_resized = tf.image.resize(i, (250, 250))
+    img_resized = tf.image.resize(i, (70, 70))
     self._state = img_resized
 
     if stage_enum == GameStage.game_over and not is_back_button_selected(i):
@@ -96,15 +98,27 @@ class NQEnv(py_environment.PyEnvironment):
         self.previous_stage = GameStage.interval
         return ts.transition(self._state, reward=0.1, discount=0.0)
 
-    if stage_enum == GameStage.interval:
-        self.press_key(action)
+    if stage_enum == GameStage.interval: #*******
         self.previous_stage = GameStage.interval
-        return ts.transition(self._state, reward=0.0, discount=0.0)
+        self.interval_loop = self.interval_loop + 1
+        self.press_key(action)
+        if self.interval_loop > 60:
+            print("looping in Interval stage for more than 60 times")
+            self._episode_ended = True
+            return ts.termination(self._state, reward=0.0)
+        return ts.transition(self._state, reward=0.0, discount=self.interval_loop * 0.0005)
+
+
 
     if stage_enum == GameStage.interval_upgrade:
         self.press_key(action)
         self.previous_stage = GameStage.interval_upgrade
-        return ts.transition(self._state, reward=0.0, discount=0.0)
+        self.interval_loop = self.interval_loop + 1
+        if self.interval_loop > 60:
+            print("looping in Interval stage for more than 60 times")
+            self._episode_ended = True
+            return ts.termination(self._state, reward=0.0)
+        return ts.transition(self._state, reward=0.0, discount=self.interval_loop * 0.0005)
 
     if stage_enum == GameStage.interval.interval_sorry:
         self.press_spacebar()
@@ -112,6 +126,7 @@ class NQEnv(py_environment.PyEnvironment):
         return ts.transition(self._state, reward=0.0, discount=0.005)
 
     if stage_enum == GameStage.in_progress and self.previous_stage == GameStage.interval:
+        self.interval_loop = 0
         reward = self.calculate_reward_game_in_progress(i)
         self.previous_stage = GameStage.in_progress
         self.press_key(action)

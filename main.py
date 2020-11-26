@@ -170,7 +170,7 @@ iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)
 plt.ylabel('Average Return')
 plt.xlabel('Iterations')
-plt.ylim(top=250)
+plt.ylim(top=70)
 
 
 # def embed_mp4(filename):

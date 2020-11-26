@@ -24,7 +24,7 @@ num_iterations = 100  # @param {type:"integer"}
 initial_collect_steps = 1000  # @param {type:"integer"}
 collect_steps_per_iteration = 1000  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
-batch_size = 1000  # @param {type:"integer"}
+batch_size = 100  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
 log_interval = 50  # @param {type:"integer"}
 num_eval_episodes = 10  # @param {type:"integer"}
@@ -44,7 +44,7 @@ time_step = nimble_quest_env.reset()
 print("################# Creating Q Net #########################")
 
 fc_layer_params = (100, 100)
-conv_layer_params = [(200, (8, 8), 4), (100, (4, 4), 2), (11, (3, 3), 1)]
+conv_layer_params = [(50, (8, 8), 4), (70, (4, 4), 2), (100, (3, 3), 1)]
 # conv_layer_params = ((200, 100, 11),)
 # dropout_layer = [0.1]
 
@@ -158,7 +158,7 @@ iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)
 plt.ylabel('Average Return')
 plt.xlabel('Iterations')
-plt.ylim(top=250)
+plt.ylim(top=70)
 
 
 # def embed_mp4(filename):

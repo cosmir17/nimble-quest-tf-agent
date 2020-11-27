@@ -108,32 +108,33 @@ def recognise_digit_image(cropped, color_range=None):
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     mask = np.zeros(thresh.shape, dtype=np.float32)
     cnts = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    if len(cnts) == 2:
-        cnts = cnts[0]
-    elif len(cnts) == 0:
-        score = predict_from_cnn(thresh)
-        print("score recognition, contour size is 0, score identified: " + score)
-        return convert_score_to_int(score)
-    else:
-        cnts = cnts[1]
-    (cnts, _) = contours.sort_contours(cnts, method="left-to-right")
-    score = ""
-    for c in cnts:
-        area = cv2.contourArea(c)
-        if area < 800 and area > 100:
-            x, y, w, h = cv2.boundingRect(c)
-            roi = 255 - thresh[y:y + h, x:x + w]
-            cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)
-            roi = cv2.bitwise_not(roi)
-            roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
-            score = score + predict_from_cnn(roi)
-    return convert_score_to_int(score)
+    try:
+        if len(cnts) == 2:
+            cnts = cnts[0]
+        else:
+            cnts = cnts[1]
+        (cnts, _) = contours.sort_contours(cnts, method="left-to-right")
+        score = ""
+        for c in cnts:
+            area = cv2.contourArea(c)
+            if area < 800 and area > 100:
+                x, y, w, h = cv2.boundingRect(c)
+                roi = 255 - thresh[y:y + h, x:x + w]
+                cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)
+                roi = cv2.bitwise_not(roi)
+                roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
+                score = score + predict_from_cnn(roi)
+        score_int = convert_score_to_int(score)
+        return score_int
+    except:
+        print("score recognition, contour error, returning score 0")
+        return None
 
 
 def convert_score_to_int(score):
     score = score.strip()
     if score == "":
-        score = 0
+        score = None
     else:
         score = int(score)
     return score

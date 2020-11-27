@@ -34,7 +34,6 @@ run_terminator_listener()
 
 nimble_quest_env = NQEnv()
 nimble_quest_env = tf_py_environment.TFPyEnvironment(nimble_quest_env)
-# nimble_quest_env = batched_py_environment.BatchedPyEnvironment([nimble_quest_env], multithreading=False)
 time_step = nimble_quest_env.reset()
 
 # action = np.array(5, dtype=np.int32)
@@ -63,7 +62,6 @@ train_step_counter = tf.Variable(0)
 agent = dqn_agent.DqnAgent(
     nimble_quest_env.time_step_spec(),
     nimble_quest_env.action_spec(),
-    epsilon_greedy=0.1,
     q_network=q_net,
     optimizer=optimizer,
     td_errors_loss_fn=common.element_wise_squared_loss,

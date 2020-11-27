@@ -19,17 +19,17 @@ from power_switch import *
 tf.compat.v1.enable_v2_behavior()
 
 
-tempdir = "nimble_quest_weight_70"
+tempdir = "nimble_quest_weight_2nd"
 
-num_iterations = 20  # @param {type:"integer"}
-initial_collect_steps = 100  # @param {type:"integer"}
-collect_steps_per_iteration = 1  # @param {type:"integer"}
-replay_buffer_max_length = 1000  # @param {type:"integer"}
-batch_size = 10  # @param {type:"integer"}
+num_iterations = 100  # @param {type:"integer"}
+initial_collect_steps = 5000  # @param {type:"integer"}
+collect_steps_per_iteration = 200  # @param {type:"integer"}
+replay_buffer_max_length = 50000  # @param {type:"integer"}
+batch_size = 200  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
-log_interval = 200  # @param {type:"integer"}
+log_interval = 5  # @param {type:"integer"}
 num_eval_episodes = 10  # @param {type:"integer"}
-eval_interval = 10  # @param {type:"integer"}
+eval_interval = 1  # @param {type:"integer"}
 
 run_terminator_listener()
 
@@ -37,19 +37,20 @@ nimble_quest_env = NQEnv()
 nimble_quest_env = tf_py_environment.TFPyEnvironment(nimble_quest_env)
 time_step = nimble_quest_env.reset()
 
-action = np.array(5, dtype=np.int32)
-next_time_step = nimble_quest_env.step(action)
+# action = np.array(5, dtype=np.int32)
+# next_time_step = nimble_quest_env.step(action)
 
 # utils.validate_py_environment(nimble_quest_env, episodes=5)
+print("################# Creating Q Net #########################")
 
-fc_layer_params = (100, 100)
-conv_layer_params = [(200, (8, 8), 4), (150, (4, 4), 2), (100, (3, 3), 1)]
-dropout_layer = [0.1]
+fc_layer_params = (560, 560)
+conv_layer_params = [(70, (8, 8), 4), (140, (4, 4), 2), (140, (3, 3), 1)]
+# conv_layer_params = ((200, 100, 11),)
+# dropout_layer = [0.1]
 
 q_net = q_network.QNetwork(
     nimble_quest_env.observation_spec(),
     nimble_quest_env.action_spec(),
-    # dropout_layer_params=dropout_layer,
     conv_layer_params=conv_layer_params,
     fc_layer_params=fc_layer_params)
 
@@ -90,9 +91,12 @@ train_checkpointer.initialize_or_restore()
 # policy_dir = os.path.join(tempdir, 'policy')
 tf_policy_saver = policy_saver.PolicySaver(agent.policy)
 
+print("################# Before Creating random_policy #########################")
 random_policy = random_tf_policy.RandomTFPolicy(nimble_quest_env.time_step_spec(), nimble_quest_env.action_spec())
 random_policy.action(time_step)
 
+print("################# random_policy action #########################")
+#    actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
 
 def compute_avg_return(environment, policy, num_episodes=10):
     total_return = 0.0
@@ -125,7 +129,7 @@ def collect_data(env, policy, buffer, steps):
     for _ in range(steps):
         collect_step(env, policy, buffer)
 
-
+print("################# DataCollection #########################")
 collect_data(nimble_quest_env, random_policy, replay_buffer, initial_collect_steps)
 dataset = replay_buffer.as_dataset(num_parallel_calls=3, sample_batch_size=batch_size, num_steps=2).prefetch(3)
 

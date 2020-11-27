@@ -65,7 +65,7 @@ class NQEnv(py_environment.PyEnvironment):
     if stage_enum == GameStage.game_over and self.game_over is False:
         self.game_over = True
         time.sleep(0.1)
-        return ts.transition(self._state, reward=0.0, discount=10.0)
+        return ts.transition(self._state, reward=-5.0)
 
     if stage_enum == GameStage.game_over and is_back_button_selected(i):
         time.sleep(0.1)
@@ -80,29 +80,29 @@ class NQEnv(py_environment.PyEnvironment):
         penalty = self.infinite_loop_safe_guard * 0.05
         if self.infinite_loop_safe_guard > 60:
             self.press_key(2)
-            return ts.transition(self._state, reward=0.0, discount=penalty)
+            return ts.transition(self._state, reward=-penalty)
         if action == 4 or action == 5:
-            return ts.transition(self._state, reward=0.0, discount=penalty)
+            return ts.transition(self._state, reward=-penalty)
         self.press_key(action)
-        return ts.transition(self._state, reward=0.0, discount=penalty)
+        return ts.transition(self._state, reward=-penalty)
 
     if stage_enum == GameStage.starting_page:
         self.press_spacebar()
         self.previous_stage = GameStage.starting_page
-        return ts.transition(self._state, reward=0.0, discount=0.0)
+        return ts.transition(self._state, reward=0.0)
 
     if stage_enum == GameStage.character_upgrade:
         PressKey(leftarrow)
         time.sleep(0.10)
         self.press_spacebar()
         self.previous_stage = GameStage.character_upgrade
-        return ts.transition(self._state, reward=0.0, discount=0.05)
+        return ts.transition(self._state, reward=-0.05)
 
     if stage_enum == GameStage.interval and self.previous_stage == GameStage.in_progress:
         self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
         self.press_key(action)
         self.previous_stage = GameStage.interval
-        return ts.transition(self._state, reward=0.2, discount=0.0)
+        return ts.transition(self._state, reward=0.1)
 
     if stage_enum == GameStage.interval:
         self.previous_stage = GameStage.interval
@@ -116,7 +116,7 @@ class NQEnv(py_environment.PyEnvironment):
             print("looping in Interval stage for more than 60 times")
             self._episode_ended = True
             return ts.termination(self._state, reward=0.0)
-        return ts.transition(self._state, reward=0.0, discount=self.infinite_loop_safe_guard * 0.0005)
+        return ts.transition(self._state, reward=-(self.infinite_loop_safe_guard * 0.0005))
 
     if stage_enum == GameStage.interval_upgrade:
         self.press_key(action)
@@ -126,19 +126,19 @@ class NQEnv(py_environment.PyEnvironment):
             print("looping in Interval stage for more than 60 times")
             self._episode_ended = True
             return ts.termination(self._state, reward=0.0)
-        return ts.transition(self._state, reward=0.0, discount=self.infinite_loop_safe_guard * 0.0005)
+        return ts.transition(self._state, reward=-(self.infinite_loop_safe_guard * 0.0005))
 
     if stage_enum == GameStage.interval.interval_sorry:
         self.press_spacebar()
         self.previous_stage = GameStage.interval_sorry
-        return ts.transition(self._state, reward=0.0, discount=0.005)
+        return ts.transition(self._state, reward=-0.005)
 
     if stage_enum == GameStage.in_progress and self.previous_stage == GameStage.interval:
         if self.infinite_loop_safe_guard != 0:
             self.infinite_loop_safe_guard = 0
         if action == 4:
             time.sleep(0.05)
-            return ts.transition(self._state, reward=0.0, discount=0.05)
+            return ts.transition(self._state, reward=-0.05)
         reward = self.calculate_reward_game_in_progress(i)
         self.previous_stage = GameStage.in_progress
         self.press_key(action)
@@ -147,13 +147,13 @@ class NQEnv(py_environment.PyEnvironment):
     if stage_enum == GameStage.paused_game_while_in_progress:
         self.previous_stage = GameStage.paused_game_while_in_progress
         self.press_spacebar()
-        return ts.transition(self._state, reward=0.0, discount=0.05)
+        return ts.transition(self._state, reward=-0.05)
 
     if stage_enum == GameStage.in_progress:
         self.previous_stage = GameStage.in_progress
         if action == 4:
             time.sleep(0.05)
-            return ts.transition(self._state, reward=0.0, discount=0.05)
+            return ts.transition(self._state, reward=-0.05)
         else:
             reward = self.calculate_reward_game_in_progress(i)
             self.press_key(action)
@@ -162,14 +162,14 @@ class NQEnv(py_environment.PyEnvironment):
     if stage_enum == GameStage.game_over_sorry:
         self.previous_stage = GameStage.game_over_sorry
         self.press_spacebar()
-        return ts.transition(self._state, reward=0.0, discount=0.05)
+        return ts.transition(self._state, reward=-0.05)
 
     if stage_enum == GameStage.store_page:
         self.previous_stage = GameStage.store_page
         self.press_key(3) #select back button
         self.press_spacebar()
         self._episode_ended = True
-        return ts.transition(self._state, reward=0.0, discount=0.05)
+        return ts.transition(self._state, reward=-0.05)
 
     if stage_enum == GameStage.main_page:
         self.previous_stage = GameStage.main_page

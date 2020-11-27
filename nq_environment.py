@@ -25,6 +25,7 @@ class NQEnv(py_environment.PyEnvironment):
     self.previous_kill_count = None
     self.previous_jewel_count = None
     self.infinite_loop_safe_guard = 0
+    self.game_over = False
 
   def action_spec(self):
     return self._action_spec
@@ -44,6 +45,7 @@ class NQEnv(py_environment.PyEnvironment):
     self.previous_kill_count = None
     self.previous_jewel_count = None
     self.infinite_loop_safe_guard = 0
+    self.game_over = False
     return ts.restart(self._state)
 
   def _step(self, action):
@@ -60,6 +62,18 @@ class NQEnv(py_environment.PyEnvironment):
     img_resized = keras.preprocessing.image.img_to_array(img_resized)
     self._state = img_resized
 
+    if stage_enum == GameStage.game_over and self.game_over is False:
+        self.game_over = True
+        time.sleep(0.1)
+        return ts.transition(self._state, reward=0.0, discount=10.0)
+
+    if stage_enum == GameStage.game_over and is_back_button_selected(i):
+        time.sleep(0.1)
+        self.press_spacebar()
+        self.previous_stage = GameStage.game_over
+        self._episode_ended = True
+        return ts.termination(self._state, reward=0.0)
+
     if stage_enum == GameStage.game_over and not is_back_button_selected(i):
         self.previous_stage = GameStage.game_over
         self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
@@ -71,25 +85,6 @@ class NQEnv(py_environment.PyEnvironment):
             return ts.transition(self._state, reward=0.0, discount=penalty)
         self.press_key(action)
         return ts.transition(self._state, reward=0.0, discount=penalty)
-
-    if stage_enum == GameStage.game_over and is_back_button_selected(i):
-        kill_reward = extract_kill_reward_game_over(i)
-        jewel_reward = extract_jewel_reward_game_over(i)
-        if kill_reward is None:
-            kill_reward = 0
-        else:
-            kill_reward = kill_reward * 0.05
-        if jewel_reward is None:
-            jewel_reward = 0
-        else:
-            jewel_reward = jewel_reward * 0.005
-        # reward_game_over = kill_reward + jewel_reward
-        # print("game-over: k: " + str(kill_reward) + "    jewel: " + str(jewel_reward) + "   total: " + str(reward_game_over))
-        time.sleep(0.10)
-        self.press_spacebar()
-        self.previous_stage = GameStage.game_over
-        self._episode_ended = True
-        return ts.termination(self._state, reward=0.0)
 
     if stage_enum == GameStage.starting_page:
         self.press_spacebar()
@@ -107,7 +102,7 @@ class NQEnv(py_environment.PyEnvironment):
         self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
         self.press_key(action)
         self.previous_stage = GameStage.interval
-        return ts.transition(self._state, reward=0.1, discount=0.0)
+        return ts.transition(self._state, reward=0.2, discount=0.0)
 
     if stage_enum == GameStage.interval:
         self.previous_stage = GameStage.interval
@@ -201,30 +196,30 @@ class NQEnv(py_environment.PyEnvironment):
           p_jewel_count = self.previous_jewel_count
       #########################
       if kill_no is None and jewel_no is None:
-        return 0.005
+        return 0.05
       elif kill_no is not None and jewel_no is not None:
           kill_diff = kill_no - p_kill_count
           jewel_diff = jewel_no - p_jewel_count
           if kill_diff > 10 and jewel_diff > 70:
-              return 0.005
+              return 0.05
           elif kill_diff > 10:
               self.previous_jewel_count = jewel_no
-              return (jewel_diff * 0.005) + 0.005
+              return (jewel_diff * 0.001) + 0.05
           elif jewel_diff > 70:
               self.previous_kill_count = kill_no
-              return (kill_diff * 0.05) + 0.005
+              return (kill_diff * 0.01) + 0.05
           else:
               self.previous_kill_count = kill_no
               self.previous_jewel_count = jewel_no
-              return (kill_diff * 0.05) + (jewel_diff * 0.005) + 0.005
+              return (kill_diff * 0.01) + (jewel_diff * 0.001) + 0.05
       elif jewel_no is None:
           self.previous_kill_count = kill_no
           kill_diff = kill_no - p_kill_count
-          return (kill_diff * 0.05) + 0.005
+          return (kill_diff * 0.01) + 0.05
       elif kill_no is None:
           self.previous_jewel_count = jewel_no
           jewel_diff = jewel_no - p_jewel_count
-          return (jewel_diff * 0.005) + 0.005
+          return (jewel_diff * 0.001) + 0.05
 
 
   def press_spacebar(self):

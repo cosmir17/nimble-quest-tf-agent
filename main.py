@@ -19,16 +19,16 @@ from power_switch import *
 tf.compat.v1.enable_v2_behavior()
 
 
-tempdir = "nimble_quest_weight_2nd"
+tempdir = "nimble_quest_weight_1st"
 
 num_iterations = 100  # @param {type:"integer"}
-initial_collect_steps = 1000  # @param {type:"integer"}
+initial_collect_steps = 500  # @param {type:"integer"}
 collect_steps_per_iteration = 200  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
 batch_size = 200  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
 log_interval = 5  # @param {type:"integer"}
-num_eval_episodes = 3  # @param {type:"integer"}
+num_eval_episodes = 50  # @param {type:"integer"}
 eval_interval = 3  # @param {type:"integer"}
 
 run_terminator_listener()

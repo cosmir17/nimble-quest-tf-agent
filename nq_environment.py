@@ -141,6 +141,9 @@ class NQEnv(py_environment.PyEnvironment):
     if stage_enum == GameStage.in_progress and self.previous_stage == GameStage.interval:
         if self.infinite_loop_safe_guard != 0:
             self.infinite_loop_safe_guard = 0
+        if action == 4:
+            time.sleep(0.05)
+            return ts.transition(self._state, reward=0.0, discount=0.05)
         reward = self.calculate_reward_game_in_progress(i)
         self.previous_stage = GameStage.in_progress
         self.press_key(action)
@@ -226,7 +229,7 @@ class NQEnv(py_environment.PyEnvironment):
 
   def press_spacebar(self):
       PressKey(spacebar)
-      time.sleep(0.1)
+      time.sleep(0.05)
 
   def press_key(self, action):
       keys_to_press = [[leftarrow], [rightarrow], [uparrow], [downarrow], [spacebar]]

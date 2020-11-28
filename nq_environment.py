@@ -15,17 +15,12 @@ class NQEnv(py_environment.PyEnvironment):
   def __init__(self):
     self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
     self._observation_spec = array_spec.BoundedArraySpec(shape=(70, 70, 1), dtype=np.float32, name='observation')
-    sn = capture_window()
-    resized = tf.image.resize(sn, (70, 70))
-    resized = tf.image.rgb_to_grayscale(resized)
-    self._state = keras.preprocessing.image.img_to_array(resized)
+    screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
     self._episode_ended = False
-    stage_enum = which_stage(sn)
-    self.previous_stage = stage_enum
-    self.previous_kill_count = None
-    self.previous_jewel_count = None
-    self.infinite_loop_safe_guard = 0
-    self.game_over = False
+    self._stage = stage_enum
+    self._raw_screenshot = screenshot
+    self._infinite_loop_safe_guard = 0
+    self._first_game_stage_not_finished = True
 
   def action_spec(self):
     return self._action_spec
@@ -35,17 +30,12 @@ class NQEnv(py_environment.PyEnvironment):
 
   def _reset(self): #reset this python app's state for a new game
     print("RESET")
-    sn = capture_window()
-    stage_enum = which_stage(sn)
-    self.previous_stage = stage_enum
-    resized = tf.image.resize(sn, (70, 70))
-    resized = tf.image.rgb_to_grayscale(resized)
-    self._state = keras.preprocessing.image.img_to_array(resized)
+    screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+    self._stage = stage_enum
+    self._raw_screenshot = screenshot
     self._episode_ended = False
-    self.previous_kill_count = None
-    self.previous_jewel_count = None
-    self.infinite_loop_safe_guard = 0
-    self.game_over = False
+    self._infinite_loop_safe_guard = 0
+    self._first_game_stage_not_finished = True
     return ts.restart(self._state)
 
   def _step(self, action):
@@ -53,182 +43,229 @@ class NQEnv(py_environment.PyEnvironment):
     if self._episode_ended:
         return self.reset()
 
-    i = capture_window()
-    stage_enum = which_stage(i)
-    print("action: " + str(actions[action]) + "  which stage: " + stage_enum.name)
-
-    img_resized = tf.image.resize(i, (70, 70))
-    img_resized = tf.image.rgb_to_grayscale(img_resized)
-    img_resized = keras.preprocessing.image.img_to_array(img_resized)
-    self._state = img_resized
-
-    if stage_enum == GameStage.game_over and self.game_over is False:
-        self.game_over = True
-        time.sleep(0.1)
-        return ts.transition(self._state, reward=-5.0)
-
-    if stage_enum == GameStage.game_over and is_back_button_selected(i):
-        time.sleep(0.1)
+    if self._stage == GameStage.game_over and is_back_button_selected(self._raw_screenshot):
         self.press_spacebar()
-        self.previous_stage = GameStage.game_over
+        time.sleep(0.1)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
         self._episode_ended = True
         return ts.termination(self._state, reward=0.0)
 
-    if stage_enum == GameStage.game_over and not is_back_button_selected(i):
-        self.previous_stage = GameStage.game_over
-        self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
-        penalty = self.infinite_loop_safe_guard * 0.05
-        if self.infinite_loop_safe_guard > 60:
-            self.press_key(2)
-            return ts.transition(self._state, reward=-penalty)
-        if action == 4 or action == 5:
-            return ts.transition(self._state, reward=-penalty)
-        self.press_key(action)
-        return ts.transition(self._state, reward=-penalty)
-
-    if stage_enum == GameStage.starting_page:
-        self.press_spacebar()
-        self.previous_stage = GameStage.starting_page
+    if self._stage == GameStage.game_over:
+        self.press_key(2)
+        time.sleep(0.1)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        if stage_enum == GameStage.in_progress:
+            print("*** CNN game over recognition error ***")
         return ts.transition(self._state, reward=0.0)
 
-    if stage_enum == GameStage.character_upgrade:
-        PressKey(leftarrow)
-        time.sleep(0.10)
+    if self._stage == GameStage.starting_page:
+        time.sleep(0.1)
         self.press_spacebar()
-        self.previous_stage = GameStage.character_upgrade
-        return ts.transition(self._state, reward=-0.05)
+        time.sleep(0.1)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
 
-    if stage_enum == GameStage.interval and self.previous_stage == GameStage.in_progress:
-        self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
+    if self._stage == GameStage.character_upgrade:
+        time.sleep(0.1)
+        self.press_key(0)
+        time.sleep(0.1)
+        self.press_spacebar()
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
+
+    if self._stage == GameStage.interval and self._first_game_stage_not_finished:
+        self.press_spacebar()
+        time.sleep(0.2)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
+
+    if self._stage == GameStage.interval: #after first game stage is done
+        self._infinite_loop_safe_guard = self._infinite_loop_safe_guard + 1
         self.press_key(action)
-        self.previous_stage = GameStage.interval
-        return ts.transition(self._state, reward=0.1)
-
-    if stage_enum == GameStage.interval:
-        self.previous_stage = GameStage.interval
-        if self.infinite_loop_safe_guard == 0:
-            self.press_spacebar()
-        else:
-            self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
-            self.press_key(action)
-            time.sleep(0.1)
-        if self.infinite_loop_safe_guard > 60:
+        time.sleep(0.2)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        if stage_enum == GameStage.in_progress:
+            self._infinite_loop_safe_guard = 0
+            return ts.transition(self._state, reward=0.005)
+        elif self._infinite_loop_safe_guard > 60:
             print("looping in Interval stage for more than 60 times")
             self._episode_ended = True
-            return ts.termination(self._state, reward=0.0)
-        return ts.transition(self._state, reward=-(self.infinite_loop_safe_guard * 0.0005))
+            return ts.termination(self._state, reward=-0.01)
+        else:
+            return ts.transition(self._state, reward=-(self._infinite_loop_safe_guard * 0.0008))
 
-    if stage_enum == GameStage.interval_upgrade:
+    if self._stage == GameStage.interval_upgrade:
         self.press_key(action)
-        self.previous_stage = GameStage.interval_upgrade
-        self.infinite_loop_safe_guard = self.infinite_loop_safe_guard + 1
-        if self.infinite_loop_safe_guard > 60:
+        self._infinite_loop_safe_guard = self._infinite_loop_safe_guard + 1
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        if self._infinite_loop_safe_guard > 60:
             print("looping in Interval stage for more than 60 times")
             self._episode_ended = True
-            return ts.termination(self._state, reward=0.0)
-        return ts.transition(self._state, reward=-(self.infinite_loop_safe_guard * 0.0005))
-
-    if stage_enum == GameStage.interval.interval_sorry:
-        self.press_spacebar()
-        self.previous_stage = GameStage.interval_sorry
-        return ts.transition(self._state, reward=-0.005)
-
-    if stage_enum == GameStage.in_progress and self.previous_stage == GameStage.interval:
-        if self.infinite_loop_safe_guard != 0:
-            self.infinite_loop_safe_guard = 0
-        if action == 4:
-            time.sleep(0.05)
-            return ts.transition(self._state, reward=-0.05)
-        reward = self.calculate_reward_game_in_progress(i)
-        self.previous_stage = GameStage.in_progress
-        self.press_key(action)
-        return ts.transition(self._state, reward=reward, discount=0.0)
-
-    if stage_enum == GameStage.paused_game_while_in_progress:
-        self.previous_stage = GameStage.paused_game_while_in_progress
-        self.press_spacebar()
-        return ts.transition(self._state, reward=-0.05)
-
-    if stage_enum == GameStage.in_progress:
-        self.previous_stage = GameStage.in_progress
-        if action == 4:
-            time.sleep(0.05)
-            return ts.transition(self._state, reward=-0.05)
+            return ts.termination(self._state, reward=-0.01)
+        if stage_enum == GameStage.interval_upgrade:
+            return ts.transition(self._state, reward=-(self._infinite_loop_safe_guard * 0.0008))
+        if stage_enum == GameStage.interval:
+            return ts.transition(self._state, reward=0.0)
+        if stage_enum == GameStage.interval_sorry:
+            return ts.transition(self._state, reward=-0.001)
         else:
-            reward = self.calculate_reward_game_in_progress(i)
-            self.press_key(action)
-            return ts.transition(self._state, reward=reward, discount=0.0)
+            print("mostly likely, game over, a penalty is given, inside "
+                  "interval_upgrade: next stage: " + str(stage_enum))
+            return ts.transition(self._state, reward=-2.0)
 
-    if stage_enum == GameStage.game_over_sorry:
-        self.previous_stage = GameStage.game_over_sorry
+    if self._stage == GameStage.interval_sorry:
         self.press_spacebar()
-        return ts.transition(self._state, reward=-0.05)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
 
-    if stage_enum == GameStage.store_page:
-        self.previous_stage = GameStage.store_page
-        self.press_key(3) #select back button
+    if self._stage == GameStage.game_over_sorry:
         self.press_spacebar()
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
+
+    if self._stage == GameStage.store_page:
+        self.press_key(3)  # select back button
+        self.press_spacebar()
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
         self._episode_ended = True
-        return ts.transition(self._state, reward=-0.05)
+        return ts.transition(self._state, reward=0.0)
 
-    if stage_enum == GameStage.main_page:
-        self.previous_stage = GameStage.main_page
+    if self._stage == GameStage.main_page:
         self.press_spacebar()
-        return ts.transition(self._state, reward=0.0, discount=0.0)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
 
-    print("unexpected route ******  action: " + str(actions[action]) + "  which stage: " + stage_enum.name)
+    if self._stage == GameStage.paused_game_while_in_progress:
+        self.press_spacebar()
+        time.sleep(0.15)
+        screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = stage_enum
+        self._raw_screenshot = screenshot
+        return ts.transition(self._state, reward=0.0)
+
+    #######################################
+    self.press_key(action)
+
+    if self._stage == GameStage.in_progress and action == 4:
+        time.sleep(0.15)
+        next_screenshot, next_stage_enum = self.take_screenshot_save_to_selfstate()
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        return ts.transition(self._state, reward=-5.0)
+
+    next_screenshot, next_stage_enum = self.take_screenshot_save_to_selfstate()
+
+    if self._stage == GameStage.in_progress and next_stage_enum == GameStage.paused_game_while_in_progress:
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        print("became paused_game_while_in_progress without space action")
+        return ts.transition(self._state, reward=-5.0)
+
+    if self._stage == GameStage.in_progress and next_stage_enum == GameStage.in_progress:
+        if self._infinite_loop_safe_guard != 0:
+            self._infinite_loop_safe_guard = 0
+        reward = self.calculate_reward_game_in_progress(self._raw_screenshot, self._stage,
+                                                        next_screenshot, next_stage_enum)
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        return ts.transition(self._state, reward=reward)
+
+    if self._stage == GameStage.in_progress and next_stage_enum == GameStage.interval:
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        return ts.transition(self._state, reward=0.2)
+
+    if self._stage == GameStage.in_progress \
+            and (next_stage_enum == GameStage.game_over
+                 or next_stage_enum == GameStage.interval_upgrade
+                 or next_stage_enum == GameStage.starting_page):
+        self._stage = GameStage.game_over
+        self._raw_screenshot = next_screenshot
+        print("game over penalty is given, next stage: " + str(next_stage_enum))
+        return ts.transition(self._state, reward=-2.0)
+
+    if self._stage == GameStage.in_progress:
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        print("unexpected route - in progress => " + next_stage_enum.name)
+        return ts.transition(self._state, reward=0.0)
+
+    self._stage = next_stage_enum
+    self._raw_screenshot = next_screenshot
+    print("unexpected route ****** which stage in next turn: " + next_stage_enum.name)
     return ts.transition(self._state, reward=0.0, discount=0.0)
 
-  def calculate_reward_game_in_progress(self, i):
-      kill_no = extract_kill_game_in_progress(i)
-      jewel_no = extract_jewel_game_in_progress(i)
-      # print("prev_kill_no: " + str(self.previous_kill_count) + "  kill no: " + str(kill_no))
-      # print("prev_jewel_count: " + str(self.previous_jewel_count) + " jewel no: " + str(jewel_no))
-      ########################
-      if self.previous_kill_count is None:
-          p_kill_count = 0
-      else:
-          p_kill_count = self.previous_kill_count
+  def take_screenshot_save_to_selfstate(self):
+      i = capture_window()
+      stage_enum = which_stage(i)
+      img_resized = tf.image.resize(i, (70, 70))
+      img_resized = tf.image.rgb_to_grayscale(img_resized)
+      img_resized = keras.preprocessing.image.img_to_array(img_resized)
+      self._state = img_resized
+      return i, stage_enum
 
-      if self.previous_jewel_count is None:
-          p_jewel_count = 0
-      else:
-          p_jewel_count = self.previous_jewel_count
-      #########################
-      if kill_no is None and jewel_no is None:
-        return 0.05
-      elif kill_no is not None and jewel_no is not None:
-          kill_diff = kill_no - p_kill_count
-          jewel_diff = jewel_no - p_jewel_count
-          if kill_diff > 10 and jewel_diff > 70:
-              return 0.05
-          elif kill_diff > 10:
-              self.previous_jewel_count = jewel_no
-              return (jewel_diff * 0.001) + 0.05
-          elif jewel_diff > 70:
-              self.previous_kill_count = kill_no
-              return (kill_diff * 0.01) + 0.05
-          else:
-              self.previous_kill_count = kill_no
-              self.previous_jewel_count = jewel_no
-              return (kill_diff * 0.01) + (jewel_diff * 0.001) + 0.05
-      elif jewel_no is None:
-          self.previous_kill_count = kill_no
-          kill_diff = kill_no - p_kill_count
-          return (kill_diff * 0.01) + 0.05
-      elif kill_no is None:
-          self.previous_jewel_count = jewel_no
-          jewel_diff = jewel_no - p_jewel_count
+  def calculate_reward_game_in_progress(self, screenshot, stage_enum, screenshot_after_action, next_stage_enum):
+      kill_no = extract_kill_game_in_progress(screenshot)
+      jewel_no = extract_jewel_game_in_progress(screenshot)
+      next_kill_no = extract_kill_game_in_progress(screenshot_after_action)
+      next_jewel_no = extract_jewel_game_in_progress(screenshot_after_action)
+
+      if kill_no is None and jewel_no is None and next_kill_no is None and next_jewel_no is None:
+          return 0.05
+      elif all(v is not None for v in [kill_no, jewel_no, next_kill_no, next_jewel_no]):
+          kill_diff = next_kill_no - kill_no
+          if kill_diff < 0 or kill_diff > 10:
+              kill_diff = 0
+          jewel_diff = next_jewel_no - jewel_no
+          if jewel_diff < 0 or jewel_diff > 70:
+              jewel_diff = 0
+          return (kill_diff * 0.01) + (jewel_diff * 0.001) + 0.05
+      elif (kill_no is None or next_kill_no is None) and jewel_no is not None and next_jewel_no is not None:
+          jewel_diff = next_jewel_no - jewel_no
+          if jewel_diff < 0 or jewel_diff > 70:
+              jewel_diff = 0
           return (jewel_diff * 0.001) + 0.05
-
+      elif kill_no is not None and next_kill_no is not None and (jewel_no is None or next_jewel_no is None):
+          kill_diff = next_kill_no - kill_no
+          if kill_diff < 0 or kill_diff > 10:
+              kill_diff = 0
+          return (kill_diff * 0.01) + 0.05
+      else:
+          print("cnn recognition error: killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+                " next Kill_no" + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+          return 0.05
 
   def press_spacebar(self):
       PressKey(spacebar)
-      time.sleep(0.05)
+      time.sleep(0.1)
 
   def press_key(self, action):
       keys_to_press = [[leftarrow], [rightarrow], [uparrow], [downarrow], [spacebar]]
       if action != 5:
           for key in keys_to_press[action]:
               PressKey(key)
-      time.sleep(0.05)
+              time.sleep(0.07)
+      else:
+          time.sleep(0.1)

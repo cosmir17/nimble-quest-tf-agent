@@ -44,7 +44,7 @@ time_step = nimble_quest_env.reset()
 print("################# Creating Q Net #########################")
 
 fc_layer_params = (560, 60)
-conv_layer_params = [(70, (8, 8), 4), (100, (4, 4), 2), (140, (3, 3), 1)]
+conv_layer_params = [(70, (8, 8), 4), (140, (4, 4), 2), (280, (3, 3), 1)]
 
 q_net = q_network.QNetwork(
     nimble_quest_env.observation_spec(),
@@ -53,8 +53,8 @@ q_net = q_network.QNetwork(
     fc_layer_params=fc_layer_params)
 
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
-# global_step = tf.compat.v1.train.get_or_create_global_step()
-global_step = tf.compat.v1.train.get_global_step()
+global_step = tf.compat.v1.train.get_or_create_global_step()
+# global_step = tf.compat.v1.train.get_global_step()
 
 #########################################################################
 agent = dqn_agent.DdqnAgent(
@@ -83,11 +83,10 @@ train_checkpointer = common.Checkpointer(
     agent=agent,
     policy=agent.policy,
     replay_buffer=replay_buffer,
-    # global_step=global_step
+    global_step=global_step
 )
 policy_dir = os.path.join(tempdir, 'policy_ddqn')
 
-# train_checkpointer = common.Checkpointer(ckpt_dir=checkpoint_dir, max_to_keep=1)
 train_checkpointer.initialize_or_restore()
 global_step = tf.compat.v1.train.get_global_step()
 tf_policy_saver = policy_saver.PolicySaver(agent.policy)

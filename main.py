@@ -24,7 +24,7 @@ tempdir = "nimble_quest_weight_4th"
 num_iterations = 300  # @param {type:"integer"}
 initial_collect_steps = 500  # @param {type:"integer"}
 collect_steps_per_iteration = 100  # @param {type:"integer"}
-replay_buffer_max_length = 10000  # @param {type:"integer"}
+replay_buffer_max_length = 700000  # @param {type:"integer"}
 batch_size = 200  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
 log_interval = 1  # @param {type:"integer"}
@@ -55,7 +55,6 @@ q_net = q_network.QNetwork(
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
 # global_step = tf.compat.v1.train.get_or_create_global_step()
 global_step = tf.compat.v1.train.get_global_step()
-# train_step_counter = tf.Variable(0)
 
 #########################################################################
 agent = dqn_agent.DdqnAgent(
@@ -78,23 +77,23 @@ replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
     max_length=replay_buffer_max_length)
 
 checkpoint_dir = os.path.join(tempdir, 'checkpoint')
-policy_dir = os.path.join(tempdir, 'policy')
-# train_checkpointer = common.Checkpointer(
-#     ckpt_dir=checkpoint_dir,
-#     max_to_keep=1,
-#     agent=agent,
-#     policy=agent.policy,
-#     replay_buffer=replay_buffer,
-#     global_step=global_step)
+train_checkpointer = common.Checkpointer(
+    ckpt_dir=checkpoint_dir,
+    max_to_keep=1,
+    agent=agent,
+    policy=agent.policy,
+    replay_buffer=replay_buffer,
+    # global_step=global_step
+)
+policy_dir = os.path.join(tempdir, 'policy_ddqn')
 
-train_checkpointer = common.Checkpointer(ckpt_dir=checkpoint_dir)
-
+# train_checkpointer = common.Checkpointer(ckpt_dir=checkpoint_dir, max_to_keep=1)
 train_checkpointer.initialize_or_restore()
+global_step = tf.compat.v1.train.get_global_step()
 tf_policy_saver = policy_saver.PolicySaver(agent.policy)
 
 print("################# Before Creating random_policy #########################")
 random_policy = random_tf_policy.RandomTFPolicy(nimble_quest_env.time_step_spec(), nimble_quest_env.action_spec())
-
 
 def compute_avg_return(environment, policy, num_episodes=10):
     total_return = 0.0
@@ -135,7 +134,7 @@ print(q_net.summary())
 
 iterator = iter(dataset)
 print("itegrator" + str(iterator))
-agent.train = common.function(agent.train)
+# agent.train = common.function(agent.train)
 train_checkpointer.initialize_or_restore()
 
 # print("################# running average_return once before training #########################")
@@ -161,8 +160,8 @@ for _ in range(num_iterations):
         print('step = {0}: Average Return = {1}'.format(step, avg_return))
         returns.append(avg_return)
 
-    if step % 30 == 0:
-        tf_policy_saver.save(policy_dir)
+    # if step % 30 == 0:
+    tf_policy_saver.save(policy_dir)
 
 iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)

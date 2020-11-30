@@ -50,11 +50,15 @@ class NQEnv(py_environment.PyEnvironment):
     if (self._stage == GameStage.game_over or self._stage == GameStage.died)\
             and is_back_button_selected(self._raw_screenshot):
         self.press_spacebar()
-        time.sleep(0.5)
+        time.sleep(0.3)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
         self._stage = stage_enum
         self._raw_screenshot = screenshot
         self._episode_ended = True
+        if stage_enum == GameStage.in_progress:
+            tf.keras.preprocessing.image.save_img("current_2.png", self._raw_screenshot, file_format='png')
+            tf.keras.preprocessing.image.save_img("next_stage_2.png", screenshot, file_format='png')
+            print("*** CNN game over recognition error game_over_penalty_ ***, stage: " + str(self._stage) + " next stage: in_progress")
         if not self._game_over_penalty_is_given:
             print("game_over_penalty_ was not _given, applying penalty")
             return ts.termination(self._state, reward=-2.0)
@@ -174,10 +178,7 @@ class NQEnv(py_environment.PyEnvironment):
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
         if stage_enum == GameStage.died or stage_enum == GameStage.game_over:
             self._game_over_penalty_is_given = True
-            tf.keras.preprocessing.image.save_img("pause_current.png", self._raw_screenshot, file_format='png')
-            tf.keras.preprocessing.image.save_img("pause_next_stage.png", screenshot, file_format='png')
-            print("game over penalty is given, next stage: " + str(stage_enum) +
-                  " this will disappear once the agent stop pressing space button while playing a game")
+            # print("game over penalty is given, next stage: " + str(stage_enum))
             self._stage = stage_enum
             self._raw_screenshot = screenshot
             return ts.transition(self._state, reward=-1.0)
@@ -212,7 +213,7 @@ class NQEnv(py_environment.PyEnvironment):
                  or next_stage_enum == GameStage.starting_page):
         self._stage = next_stage_enum
         self._raw_screenshot = next_screenshot
-        print("game over penalty is given, next stage: " + str(next_stage_enum))
+        # print("game over penalty is given, next stage: " + str(next_stage_enum))
         self._game_over_penalty_is_given = True
         return ts.transition(self._state, reward=-2.0)
 

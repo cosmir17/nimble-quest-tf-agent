@@ -23,7 +23,7 @@ tempdir = "nimble_quest_weight_4th"
 
 num_iterations = 300  # @param {type:"integer"}
 initial_collect_steps = 500  # @param {type:"integer"}
-collect_steps_per_iteration = 200  # @param {type:"integer"}
+collect_steps_per_iteration = 100  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
 batch_size = 200  # @param {type:"integer"}
 learning_rate = 1e-3  # @param {type:"number"}
@@ -90,16 +90,11 @@ policy_dir = os.path.join(tempdir, 'policy')
 train_checkpointer = common.Checkpointer(ckpt_dir=checkpoint_dir)
 
 train_checkpointer.initialize_or_restore()
-# policy_dir = os.path.join(tempdir, 'policy')
 tf_policy_saver = policy_saver.PolicySaver(agent.policy)
 
 print("################# Before Creating random_policy #########################")
 random_policy = random_tf_policy.RandomTFPolicy(nimble_quest_env.time_step_spec(), nimble_quest_env.action_spec())
-# random_policy.action(time_step)
-# random_policy.action(global_step)
 
-print("################# random_policy action #########################")
-#    actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
 
 def compute_avg_return(environment, policy, num_episodes=10):
     total_return = 0.0
@@ -116,9 +111,6 @@ def compute_avg_return(environment, policy, num_episodes=10):
     return avg_return.numpy()[0]
 
 
-# compute_avg_return(nimble_quest_env, random_policy, num_eval_episodes)
-
-
 def collect_step(environment, policy, buffer):
     time_step = environment.current_time_step()
     action_step = policy.action(time_step)
@@ -132,7 +124,7 @@ def collect_data(env, policy, buffer, steps):
     for _ in range(steps):
         collect_step(env, policy, buffer)
 
-print("################# DataCollection #########################")
+print("################# Random Policy Data Collection #########################")
 collect_data(nimble_quest_env, random_policy, replay_buffer, initial_collect_steps)
 dataset = replay_buffer.as_dataset(num_parallel_calls=3, sample_batch_size=batch_size, num_steps=2).prefetch(3)
 
@@ -144,7 +136,6 @@ print(q_net.summary())
 iterator = iter(dataset)
 print("itegrator" + str(iterator))
 agent.train = common.function(agent.train)
-# agent.train_step_counter.assign(0)
 train_checkpointer.initialize_or_restore()
 
 # print("################# running average_return once before training #########################")
@@ -171,7 +162,7 @@ for _ in range(num_iterations):
         returns.append(avg_return)
 
     if step % 30 == 0:
-        tf_policy_saver.save_checkpoint(policy_dir)
+        tf_policy_saver.save(policy_dir)
 
 iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)

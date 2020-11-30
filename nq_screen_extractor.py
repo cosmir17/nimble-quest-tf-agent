@@ -35,14 +35,16 @@ def which_stage(img):
 
 def predict_from_cnn(img):
     img = tf.image.resize(img, (35, 35))
-    img = np.array(img) / 255.0
-    prediction = score_model.predict(np.array([img]))
-    found = np.argmax(prediction)
-    found = str(found)
-    if found == "10" or np.mean(img) == 255 or np.mean(img) == 0:
+    if np.mean(img) == 255 or np.mean(img) == 0:
         found = ""
+    else:
+        img = np.array(img) / 255.0
+        prediction = score_model.predict(np.array([img]))
+        found = np.argmax(prediction)
+        found = str(found)
+        if found == "10":
+            found = ""
     return found
-
 
 def capture_window_raw():
     with mss() as sct:
@@ -78,13 +80,6 @@ def extract_jewel_game_in_progress(np_img):
     return recognise_digit_image(cropped, color_range)
 
 
-# def extract_char_count_in_progress(np_img):
-#     w, h = 100, 45
-#     cropped = tf.image.crop_to_bounding_box(np_img, 30, 40, h, w)
-#     color_range = [(0, 0, 0), (0, 0, 0)]
-#     return recognise_digit_image(cropped, color_range)
-
-
 def extract_jewel_reward_game_over(np_img):
     w, h = 140, 35
     cropped = tf.image.crop_to_bounding_box(np_img, 349, 427, h, w)
@@ -117,7 +112,7 @@ def recognise_digit_image(cropped, color_range=None):
         score = ""
         for c in cnts:
             area = cv2.contourArea(c)
-            if area < 800 and area > 100:
+            if area < 800 and area > 300:
                 x, y, w, h = cv2.boundingRect(c)
                 roi = 255 - thresh[y:y + h, x:x + w]
                 cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)

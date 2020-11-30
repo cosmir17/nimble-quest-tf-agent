@@ -85,9 +85,16 @@ weightPath = "nq_score_weight.h5"
 checkpoint = ModelCheckpoint(weightPath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
+batch_size = 40
+
+data_generator = tf.keras.preprocessing.image.ImageDataGenerator(width_shift_range=0.1, height_shift_range=0.1)
+train_generator = data_generator.flow(x_train, y_train, batch_size)
+
 ############# LOAD ################### LOAD ################### LOAD ######
-# loaded_model = load_model(weightPath)
-# loaded_model.summary()
+loaded_model = load_model(weightPath)
+loaded_model.summary()
+
+loaded_model.fit(train_generator, epochs=50, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0
@@ -108,53 +115,61 @@ callbacks_list = [checkpoint]
 
 
 # Confusion matrix part is copied from: https://colab.research.google.com/drive/1pdzZ2MB2g6CT_-bT0D0bO2IKyghOhlM_
-# from sklearn.metrics import confusion_matrix
-# import itertools
-#
-# def plot_confusion_matrix(cm, classes,
-#                           normalize=False,
-#                           title='Confusion matrix',
-#                           cmap=plt.cm.Blues):
-#   """
-#   This function prints and plots the confusion matrix.
-#   Normalization can be applied by setting `normalize=True`.
-#   """
-#   if normalize:
-#       cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-#       print("Normalized confusion matrix")
-#   else:
-#       print('Confusion matrix, without normalization')
-#
-#   print(cm)
-#
-#   plt.imshow(cm, interpolation='nearest', cmap=cmap)
-#   plt.title(title)
-#   plt.colorbar()
-#   tick_marks = np.arange(len(classes))
-#   plt.xticks(tick_marks, classes, rotation=45)
-#   plt.yticks(tick_marks, classes)
-#
-#   fmt = '.2f' if normalize else 'd'
-#   thresh = cm.max() / 2.
-#   for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-#       plt.text(j, i, format(cm[i, j], fmt),
-#                horizontalalignment="center",
-#                color="white" if cm[i, j] > thresh else "black")
-#
-#   plt.tight_layout()
-#   plt.ylabel('True label')
-#   plt.xlabel('Predicted label')
-#   plt.show()
-#
-#
-# p_test = loaded_model.predict(x_train).argmax(axis=1)
-# y_train = y_train.argmax(axis=1)
-# cm = confusion_matrix(y_train, p_test)
-# plot_confusion_matrix(cm, list(range(11)))
+from sklearn.metrics import confusion_matrix
+import itertools
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+  """
+  This function prints and plots the confusion matrix.
+  Normalization can be applied by setting `normalize=True`.
+  """
+  if normalize:
+      cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+      print("Normalized confusion matrix")
+  else:
+      print('Confusion matrix, without normalization')
+
+  print(cm)
+
+  plt.imshow(cm, interpolation='nearest', cmap=cmap)
+  plt.title(title)
+  plt.colorbar()
+  tick_marks = np.arange(len(classes))
+  plt.xticks(tick_marks, classes, rotation=45)
+  plt.yticks(tick_marks, classes)
+
+  fmt = '.2f' if normalize else 'd'
+  thresh = cm.max() / 2.
+  for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+      plt.text(j, i, format(cm[i, j], fmt),
+               horizontalalignment="center",
+               color="white" if cm[i, j] > thresh else "black")
+
+  plt.tight_layout()
+  plt.ylabel('True label')
+  plt.xlabel('Predicted label')
+  plt.show()
+
+
+p_test = loaded_model.predict(x_train).argmax(axis=1)
+y_train = y_train.argmax(axis=1)
+cm = confusion_matrix(y_train, p_test)
+plot_confusion_matrix(cm, list(range(11)))
+
+misclassified_idx = np.where(p_test != y_train)[0]
+if misclassified_idx.size > 0:
+    i = np.random.choice(misclassified_idx)
+    plt.imshow(x_train[i], cmap='gray')
+    print("misclassified index : " + str(misclassified_idx))
+    plt.title("True label: %s Predicted: %s" % (y_train[i], p_test[i]))
+    plt.show()
 
 # Confusion matrix, without normalization
-# [[ 6  0  0  0  0  0  0  0  0  0  0]
-#  [ 0  6  0  0  0  0  0  0  0  0  0]
+# [[ 7  0  0  0  0  0  0  0  0  0  0]
+#  [ 0  8  0  0  0  0  0  0  0  0  0]
 #  [ 0  0 19  0  0  0  0  0  0  0  0]
 #  [ 0  0  0  9  0  0  0  0  0  0  0]
 #  [ 0  0  0  0 17  0  0  0  0  0  0]
@@ -163,4 +178,4 @@ callbacks_list = [checkpoint]
 #  [ 0  0  0  0  0  0  0  4  0  0  0]
 #  [ 0  0  0  0  0  0  0  0 12  0  0]
 #  [ 0  0  0  0  0  0  0  0  0 14  0]
-#  [ 0  0  0  0  0  0  0  0  0  0 19]]
+#  [ 0  0  0  0  0  0  0  0  0  0 20]]

@@ -19,9 +19,9 @@ from power_switch import *
 tf.compat.v1.enable_v2_behavior()
 
 
-tempdir = "nimble_quest_weight_2nd"
+tempdir = "nimble_quest_weight_4th"
 
-num_iterations = 100  # @param {type:"integer"}
+num_iterations = 300  # @param {type:"integer"}
 initial_collect_steps = 500  # @param {type:"integer"}
 collect_steps_per_iteration = 200  # @param {type:"integer"}
 replay_buffer_max_length = 10000  # @param {type:"integer"}
@@ -43,10 +43,8 @@ time_step = nimble_quest_env.reset()
 # utils.validate_py_environment(nimble_quest_env, episodes=5)
 print("################# Creating Q Net #########################")
 
-fc_layer_params = (560, 560)
-conv_layer_params = [(70, (8, 8), 4), (140, (4, 4), 2), (140, (3, 3), 1)]
-# conv_layer_params = ((200, 100, 11),)
-# dropout_layer = [0.1]
+fc_layer_params = (560, 60)
+conv_layer_params = [(70, (8, 8), 4), (100, (4, 4), 2), (140, (3, 3), 1)]
 
 q_net = q_network.QNetwork(
     nimble_quest_env.observation_spec(),
@@ -55,11 +53,12 @@ q_net = q_network.QNetwork(
     fc_layer_params=fc_layer_params)
 
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
-global_step = tf.compat.v1.train.get_or_create_global_step()
+# global_step = tf.compat.v1.train.get_or_create_global_step()
+global_step = tf.compat.v1.train.get_global_step()
 # train_step_counter = tf.Variable(0)
 
 #########################################################################
-agent = dqn_agent.DqnAgent(
+agent = dqn_agent.DdqnAgent(
     nimble_quest_env.time_step_spec(),
     nimble_quest_env.action_spec(),
     q_network=q_net,
@@ -79,21 +78,25 @@ replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
     max_length=replay_buffer_max_length)
 
 checkpoint_dir = os.path.join(tempdir, 'checkpoint')
-train_checkpointer = common.Checkpointer(
-    ckpt_dir=checkpoint_dir,
-    max_to_keep=1,
-    agent=agent,
-    policy=agent.policy,
-    replay_buffer=replay_buffer,
-    global_step=global_step
-)
+policy_dir = os.path.join(tempdir, 'policy')
+# train_checkpointer = common.Checkpointer(
+#     ckpt_dir=checkpoint_dir,
+#     max_to_keep=1,
+#     agent=agent,
+#     policy=agent.policy,
+#     replay_buffer=replay_buffer,
+#     global_step=global_step)
+
+train_checkpointer = common.Checkpointer(ckpt_dir=checkpoint_dir)
+
 train_checkpointer.initialize_or_restore()
 # policy_dir = os.path.join(tempdir, 'policy')
 tf_policy_saver = policy_saver.PolicySaver(agent.policy)
 
 print("################# Before Creating random_policy #########################")
 random_policy = random_tf_policy.RandomTFPolicy(nimble_quest_env.time_step_spec(), nimble_quest_env.action_spec())
-random_policy.action(time_step)
+# random_policy.action(time_step)
+# random_policy.action(global_step)
 
 print("################# random_policy action #########################")
 #    actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
@@ -113,7 +116,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
     return avg_return.numpy()[0]
 
 
-compute_avg_return(nimble_quest_env, random_policy, num_eval_episodes)
+# compute_avg_return(nimble_quest_env, random_policy, num_eval_episodes)
 
 
 def collect_step(environment, policy, buffer):
@@ -137,21 +140,18 @@ dataset = replay_buffer.as_dataset(num_parallel_calls=3, sample_batch_size=batch
 ############################################################
 
 print(q_net.summary())
-# print(q_net._q_value_layer.input_shape)
-# print(q_net._q_value_layer.output_shape)
-# print(agent)
 
 iterator = iter(dataset)
 print("itegrator" + str(iterator))
 agent.train = common.function(agent.train)
-agent.train_step_counter.assign(0)
+# agent.train_step_counter.assign(0)
 train_checkpointer.initialize_or_restore()
 
-print("################# running average_return once before training #########################")
+# print("################# running average_return once before training #########################")
 avg_return = compute_avg_return(nimble_quest_env, agent.policy, num_eval_episodes) # Evaluate the agent's policy once before training.
 returns = [avg_return]
-
-print("################# training starting #########################")
+#
+# print("################# training starting #########################")
 
 for _ in range(num_iterations):
     # Collect a few steps using collect_policy and save to the replay buffer.
@@ -160,7 +160,7 @@ for _ in range(num_iterations):
     experience, unused_info = next(iterator)
     train_loss = agent.train(experience).loss
     step = agent.train_step_counter.numpy()
-    train_checkpointer.save(agent.train_step_counter)
+    train_checkpointer.save(global_step)
 
     if step % log_interval == 0:
         print('step = {0}: loss = {1}'.format(step, train_loss))
@@ -169,6 +169,9 @@ for _ in range(num_iterations):
         avg_return = compute_avg_return(nimble_quest_env, agent.policy, num_eval_episodes)
         print('step = {0}: Average Return = {1}'.format(step, avg_return))
         returns.append(avg_return)
+
+    if step % 30 == 0:
+        tf_policy_saver.save_checkpoint(policy_dir)
 
 iterations = range(0, num_iterations + 1, eval_interval)
 plt.plot(iterations, returns)
@@ -188,8 +191,8 @@ plt.ylim(top=70)
 #     </video>'''.format(b64.decode())
 #
 #     return IPython.display.HTML(tag)
-
-
+#
+#
 # def create_policy_eval_video(policy, filename, num_episodes=5, fps=30):
 #     filename = filename + ".mp4"
 #     with imageio.get_writer(filename, fps=fps) as video:
@@ -202,6 +205,10 @@ plt.ylim(top=70)
 #                 video.append_data(nimble_quest_env.render())
 #     return embed_mp4(filename)
 
+
+# loaded_policy = tf.saved_model.load(policy_dir)
+# timestep = nimble_quest_env.reset()
+# compute_avg_return(nimble_quest_env, loaded_policy, num_eval_episodes)
 
 # saved_policy = tf.compat.v2.saved_model.load(policy_dir)
 # create_policy_eval_video(saved_policy, "trained-agent")

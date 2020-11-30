@@ -14,3 +14,5 @@ class GameStage(Enum):
     game_over_sorry = 8
     store_page = 9
     main_page = 10
+
+    died = 11

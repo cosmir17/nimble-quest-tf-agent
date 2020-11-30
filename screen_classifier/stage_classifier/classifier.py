@@ -36,7 +36,6 @@ def load_images_to_np_array(path_array):
         arr = keras.preprocessing.image.img_to_array(img)
         arr = tf.image.resize(arr, (100, 100))
         image_array.append(arr)
-
     return np.asarray(image_array)
 
 
@@ -49,7 +48,7 @@ for name in image_file_list:
     image_category_list.append(name_arr[1])
 
 y_train = np.asarray(image_category_list)
-y_train = utils.to_categorical(y_train, 11)
+y_train = utils.to_categorical(y_train, 12)
 x_train = load_images_to_np_array(image_file_list)
 # print(x_train[0])
 # plt.imshow(x_train[(len(x_train) - 4)])
@@ -64,18 +63,18 @@ i = Input(shape=x_train[0].shape)
 nq_network = Conv2D(100, (3, 3), activation='relu', padding='same')(i)
 nq_network = BatchNormalization()(nq_network)
 nq_network = MaxPooling2D((2, 2))(nq_network)
-nq_network = Conv2D(50, (3, 3), activation='relu', padding='same')(nq_network)
+nq_network = Conv2D(110, (3, 3), activation='relu', padding='same')(nq_network)
 nq_network = BatchNormalization()(nq_network)
 nq_network = MaxPooling2D((2, 2))(nq_network)
-nq_network = Conv2D(25, (3, 3), activation='relu', padding='same')(nq_network)
+nq_network = Conv2D(120, (3, 3), activation='relu', padding='same')(nq_network)
 nq_network = BatchNormalization()(nq_network)
 nq_network = MaxPooling2D((2, 2))(nq_network)
 
 nq_network = Flatten()(nq_network)
 nq_network = Dropout(0.2)(nq_network)
-nq_network = Dense(25, activation='relu')(nq_network)
+nq_network = Dense(120, activation='relu')(nq_network)
 nq_network = Dropout(0.1)(nq_network)
-nq_network = Dense(11, activation='softmax')(nq_network)
+nq_network = Dense(12, activation='softmax')(nq_network)
 
 model = Model(inputs=i, outputs=nq_network)
 model.summary()
@@ -86,13 +85,16 @@ print("x_train[0].shape:", x_train[0].shape)
 weightPath = "nq_screen_weight.h5"
 checkpoint = ModelCheckpoint(weightPath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
+batch_size = 60
+
+data_generator = tf.keras.preprocessing.image.ImageDataGenerator(width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, vertical_flip=True)
+train_generator = data_generator.flow(x_train, y_train, batch_size)
 
 ############# LOAD ################### LOAD ################### LOAD ######
 loaded_model = load_model(weightPath)
 loaded_model.summary()
 
-# batch_size = 40
-# loaded_model.fit(x_train, y_train, epochs=300, batch_size=batch_size, callbacks=callbacks_list)
+loaded_model.fit(train_generator, epochs=50, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0
@@ -105,12 +107,10 @@ loaded_model.summary()
 ############# LOAD ################### LOAD ################### LOAD ######
 
 ############### Training ############### Training ############### Training ###############
-# batch_size = 40
+# batch_size = 60
 # steps_per_epoch = x_train.shape[0]
-# model.fit(x_train, y_train, epochs=1000, batch_size=batch_size, callbacks=callbacks_list)
+# model.fit(x_train, y_train, epochs=600, batch_size=batch_size, callbacks=callbacks_list)
 ############### Training ############### Training ############### Training ###############
-
-
 
 
 
@@ -158,17 +158,26 @@ def plot_confusion_matrix(cm, classes,
 p_test = loaded_model.predict(x_train).argmax(axis=1)
 y_train = y_train.argmax(axis=1)
 cm = confusion_matrix(y_train, p_test)
-plot_confusion_matrix(cm, list(range(11)))
+plot_confusion_matrix(cm, list(range(12)))
 
-# Confusion Matrix
-# [[26  0  0  0  0  0  0  0  0  0  0]
-#  [ 0  9  0  0  0  0  0  0  0  0  0]
-#  [ 0  0  5  0  0  0  0  0  0  0  0]
-#  [ 0  0  0 18  0  0  0  0  0  0  0]
-#  [ 0  0  0  0  3  0  0  0  0  0  0]
-#  [ 0  0  0  0  0  8  0  0  0  0  0]
-#  [ 0  0  0  0  0  0 10  0  0  0  0]
-#  [ 0  0  0  0  0  0  0  7  0  0  0]
-#  [ 0  0  0  0  0  0  0  0  2  0  0]
-#  [ 0  0  0  0  0  0  0  0  0  6  0]
-#  [ 0  0  0  0  0  0  0  0  0  0  1]]
+misclassified_idx = np.where(p_test != y_train)[0]
+if misclassified_idx.size > 0:
+    i = np.random.choice(misclassified_idx)
+    plt.imshow(x_train[i], cmap='gray')
+    print("misclassified index : " + str(misclassified_idx))
+    plt.title("True label: %s Predicted: %s" % (y_train[i], p_test[i]))
+    plt.show()
+
+# Confusion matrix, without normalization
+# [[64  0  0  0  0  0  0  0  0  0  0  0]
+#  [ 0 32  0  0  0  0  0  0  0  0  0  0]
+#  [ 0  0  5  0  0  0  0  0  0  0  0  0]
+#  [ 0  0  0 18  0  0  0  0  0  0  0  0]
+#  [ 0  0  0  0  3  0  0  0  0  0  0  0]
+#  [ 0  0  0  0  0  8  0  0  0  0  0  0]
+#  [ 0  0  0  0  0  0 10  0  0  0  0  0]
+#  [ 0  0  0  0  0  0  0  9  0  0  0  0]
+#  [ 0  0  0  0  0  0  0  0  4  0  0  0]
+#  [ 0  0  0  0  0  0  0  0  0  6  0  0]
+#  [ 0  0  0  0  0  0  0  0  0  0  1  0]
+#  [ 0  0  0  0  0  0  0  0  0  0  0 58]]

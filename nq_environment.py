@@ -21,6 +21,7 @@ class NQEnv(py_environment.PyEnvironment):
     self._raw_screenshot = screenshot
     self._infinite_loop_safe_guard = 0
     self._first_game_stage_not_finished = True
+    self._game_over_penalty_is_given = False
 
   def action_spec(self):
     return self._action_spec
@@ -36,30 +37,40 @@ class NQEnv(py_environment.PyEnvironment):
     self._episode_ended = False
     self._infinite_loop_safe_guard = 0
     self._first_game_stage_not_finished = True
+    self._game_over_penalty_is_given = False
     return ts.restart(self._state)
 
   def _step(self, action):
-    actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
     if self._episode_ended:
         return self.reset()
 
-    if self._stage == GameStage.game_over and is_back_button_selected(self._raw_screenshot):
+    # actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
+    # print("action: " + str(actions[action]) + "  which stage: " + str(self._stage))
+
+    if (self._stage == GameStage.game_over or self._stage == GameStage.died)\
+            and is_back_button_selected(self._raw_screenshot):
         self.press_spacebar()
-        time.sleep(0.1)
+        time.sleep(0.5)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
         self._stage = stage_enum
         self._raw_screenshot = screenshot
         self._episode_ended = True
-        return ts.termination(self._state, reward=0.0)
+        if not self._game_over_penalty_is_given:
+            print("game_over_penalty_ was not _given, applying penalty")
+            return ts.termination(self._state, reward=-2.0)
+        else:
+            return ts.termination(self._state, reward=0.0)
 
-    if self._stage == GameStage.game_over:
-        self.press_key(2)
+    if self._stage == GameStage.game_over or self._stage == GameStage.died:
         time.sleep(0.1)
+        self.press_key(2)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        if stage_enum == GameStage.in_progress:
+            tf.keras.preprocessing.image.save_img("current.png", self._raw_screenshot, file_format='png')
+            tf.keras.preprocessing.image.save_img("next_stage.png", screenshot, file_format='png')
+            print("*** CNN game over recognition error ***, stage: " + str(self._stage) + " next stage: in_progress")
         self._stage = stage_enum
         self._raw_screenshot = screenshot
-        if stage_enum == GameStage.in_progress:
-            print("*** CNN game over recognition error ***")
         return ts.transition(self._state, reward=0.0)
 
     if self._stage == GameStage.starting_page:
@@ -161,6 +172,15 @@ class NQEnv(py_environment.PyEnvironment):
         self.press_spacebar()
         time.sleep(0.15)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+        if stage_enum == GameStage.died or stage_enum == GameStage.game_over:
+            self._game_over_penalty_is_given = True
+            tf.keras.preprocessing.image.save_img("pause_current.png", self._raw_screenshot, file_format='png')
+            tf.keras.preprocessing.image.save_img("pause_next_stage.png", screenshot, file_format='png')
+            print("game over penalty is given, next stage: " + str(stage_enum) +
+                  " this will disappear once the agent stop pressing space button while playing a game")
+            self._stage = stage_enum
+            self._raw_screenshot = screenshot
+            return ts.transition(self._state, reward=-1.0)
         self._stage = stage_enum
         self._raw_screenshot = screenshot
         return ts.transition(self._state, reward=0.0)
@@ -168,19 +188,12 @@ class NQEnv(py_environment.PyEnvironment):
     #######################################
     self.press_key(action)
 
-    if self._stage == GameStage.in_progress and action == 4:
-        time.sleep(0.15)
-        next_screenshot, next_stage_enum = self.take_screenshot_save_to_selfstate()
-        self._stage = next_stage_enum
-        self._raw_screenshot = next_screenshot
-        return ts.transition(self._state, reward=-5.0)
-
     next_screenshot, next_stage_enum = self.take_screenshot_save_to_selfstate()
+    # print(" next stage: " + str(next_stage_enum))
 
     if self._stage == GameStage.in_progress and next_stage_enum == GameStage.paused_game_while_in_progress:
         self._stage = next_stage_enum
         self._raw_screenshot = next_screenshot
-        print("became paused_game_while_in_progress without space action")
         return ts.transition(self._state, reward=-5.0)
 
     if self._stage == GameStage.in_progress and next_stage_enum == GameStage.in_progress:
@@ -192,25 +205,29 @@ class NQEnv(py_environment.PyEnvironment):
         self._raw_screenshot = next_screenshot
         return ts.transition(self._state, reward=reward)
 
-    if self._stage == GameStage.in_progress and next_stage_enum == GameStage.interval:
-        self._stage = next_stage_enum
-        self._raw_screenshot = next_screenshot
-        return ts.transition(self._state, reward=0.2)
-
     if self._stage == GameStage.in_progress \
             and (next_stage_enum == GameStage.game_over
                  or next_stage_enum == GameStage.interval_upgrade
+                 or next_stage_enum == GameStage.died
                  or next_stage_enum == GameStage.starting_page):
-        self._stage = GameStage.game_over
+        self._stage = next_stage_enum
         self._raw_screenshot = next_screenshot
         print("game over penalty is given, next stage: " + str(next_stage_enum))
+        self._game_over_penalty_is_given = True
         return ts.transition(self._state, reward=-2.0)
+
+    if self._stage == GameStage.in_progress and next_stage_enum == GameStage.interval:
+        print("**finished stage")
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
+        return ts.transition(self._state, reward=0.2)
 
     if self._stage == GameStage.in_progress:
         self._stage = next_stage_enum
         self._raw_screenshot = next_screenshot
         print("unexpected route - in progress => " + next_stage_enum.name)
-        return ts.transition(self._state, reward=0.0)
+        self._game_over_penalty_is_given = True
+        return ts.transition(self._state, reward=-2.0)
 
     self._stage = next_stage_enum
     self._raw_screenshot = next_screenshot
@@ -266,6 +283,6 @@ class NQEnv(py_environment.PyEnvironment):
       if action != 5:
           for key in keys_to_press[action]:
               PressKey(key)
-              time.sleep(0.07)
+              time.sleep(0.05)
       else:
-          time.sleep(0.1)
+          time.sleep(0.07)

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use("macOSX")
+import platform
 
 from tf_agents.environments import tf_py_environment
 from tf_agents.agents.dqn import dqn_agent
@@ -15,6 +15,10 @@ from tf_agents.utils import common
 from nq_environment import *
 from power_switch import *
 
+
+os_name = platform.system()
+if os_name == "Darwin":
+    matplotlib.use("macOSX")
 
 tf.compat.v1.enable_v2_behavior()
 

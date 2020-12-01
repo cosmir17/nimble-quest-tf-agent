@@ -289,6 +289,5 @@ class NQEnv(py_environment.PyEnvironment):
       if action != 5:
           for key in keys_to_press[action]:
               PressKey(key)
-              time.sleep(0.05)
       else:
           time.sleep(0.07)

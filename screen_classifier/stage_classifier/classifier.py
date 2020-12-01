@@ -85,7 +85,7 @@ print("x_train[0].shape:", x_train[0].shape)
 weightPath = "nq_screen_weight.h5"
 checkpoint = ModelCheckpoint(weightPath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
-batch_size = 60
+batch_size = 50
 
 data_generator = tf.keras.preprocessing.image.ImageDataGenerator(width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, vertical_flip=True)
 train_generator = data_generator.flow(x_train, y_train, batch_size)
@@ -94,7 +94,7 @@ train_generator = data_generator.flow(x_train, y_train, batch_size)
 loaded_model = load_model(weightPath)
 loaded_model.summary()
 
-loaded_model.fit(train_generator, epochs=100, batch_size=batch_size, callbacks=callbacks_list)
+loaded_model.fit(train_generator, epochs=400, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0
@@ -169,9 +169,9 @@ if misclassified_idx.size > 0:
     plt.show()
 
 # Confusion matrix, without normalization
-# [[64  0  0  0  0  0  0  0  0  0  0  0]
-#  [ 0 32  0  0  0  0  0  0  0  0  0  0]
-#  [ 0  0  5  0  0  0  0  0  0  0  0  0]
+# [[77  0  0  0  0  0  0  0  0  0  0  0]
+#  [ 0 33  0  0  0  0  0  0  0  0  0  0]
+#  [ 0  0  7  0  0  0  0  0  0  0  0  0]
 #  [ 0  0  0 18  0  0  0  0  0  0  0  0]
 #  [ 0  0  0  0  3  0  0  0  0  0  0  0]
 #  [ 0  0  0  0  0  8  0  0  0  0  0  0]
@@ -180,4 +180,4 @@ if misclassified_idx.size > 0:
 #  [ 0  0  0  0  0  0  0  0  4  0  0  0]
 #  [ 0  0  0  0  0  0  0  0  0  6  0  0]
 #  [ 0  0  0  0  0  0  0  0  0  0  1  0]
-#  [ 0  0  0  0  0  0  0  0  0  0  0 58]]
+#  [ 0  0  0  0  0  0  0  0  0  0  0 66]]

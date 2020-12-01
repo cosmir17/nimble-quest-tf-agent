@@ -14,7 +14,6 @@ score_weight_path = "screen_classifier/score_classifier/nq_score_weight.h5"
 stage_model = load_model(stage_weight_path)
 score_model = load_model(score_weight_path)
 
-
 # 1261 X 702
 def capture_window():
     with mss() as sct:
@@ -112,7 +111,11 @@ def recognise_digit_image(cropped, color_range=None):
         score = ""
         for c in cnts:
             area = cv2.contourArea(c)
-            if area < 800 and area > 300:
+            if color_range is None:
+                threshold = 500
+            else:
+                threshold = 300
+            if area < 800 and area > threshold:
                 x, y, w, h = cv2.boundingRect(c)
                 roi = 255 - thresh[y:y + h, x:x + w]
                 cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)
@@ -143,3 +146,11 @@ def is_back_button_selected(np_img):
         return True
     else:
         return False
+
+
+
+# prediction = tf.image.decode_png(tf.io.read_file("83_0_.png"), channels=3)
+# prediction = tf.keras.preprocessing.image.img_to_array(prediction)
+# # selected = is_back_button_selected(prediction)
+# selected = extract_kill_game_in_progress(prediction)
+# print("score: " + str(selected))

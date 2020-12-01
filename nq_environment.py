@@ -262,8 +262,8 @@ class NQEnv(py_environment.PyEnvironment):
           reward = (kill_diff * 0.01) + (jewel_diff * 0.001) + 0.05
           if kill_no > 10 :
               tf.keras.preprocessing.image.save_img("wrong_kill_count_" + str(kill_no) + ".png", screenshot, file_format='png')
-          # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-          #       " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+          print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+                " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
           return reward
       elif (kill_no is None or next_kill_no is None) and jewel_no is not None and next_jewel_no is not None:
           jewel_diff = next_jewel_no - jewel_no

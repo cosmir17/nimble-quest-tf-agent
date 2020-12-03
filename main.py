@@ -21,7 +21,7 @@ tf.compat.v1.enable_v2_behavior()
 
 tempdir = "nimble_quest_weight_5th"
 
-num_iterations = 300  # @param {type:"integer"}
+num_iterations = 1000  # @param {type:"integer"}
 initial_collect_steps = 500  # @param {type:"integer"}
 collect_steps_per_iteration = 100  # @param {type:"integer"}
 replay_buffer_max_length = 70000  # @param {type:"integer"}
@@ -120,12 +120,12 @@ def collect_data(env, policy, buffer, steps):
         collect_step(env, policy, buffer)
 
 print("################# Running Saved Policy #########################")
-saved_policy = tf.compat.v2.saved_model.load(policy_dir)
-compute_avg_return(nimble_quest_env, saved_policy, num_eval_episodes)
+# saved_policy = tf.compat.v2.saved_model.load(policy_dir)
+# compute_avg_return(nimble_quest_env, saved_policy, num_eval_episodes)
 
 
 print("################# Random Policy Data Collection #########################")
-# collect_data(nimble_quest_env, random_policy, replay_buffer, initial_collect_steps)
+collect_data(nimble_quest_env, random_policy, replay_buffer, initial_collect_steps)
 dataset = replay_buffer.as_dataset(num_parallel_calls=3, sample_batch_size=batch_size, num_steps=2).prefetch(3)
 
 

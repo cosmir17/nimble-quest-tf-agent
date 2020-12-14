@@ -7,11 +7,16 @@ from directkeys import *
 from nq_screen_extractor import *
 from tensorflow import keras
 
+jewel_reward_point = 0.0001
+kill_reward_point = 0.001
+reward_for_being_alive = 0.001
+
 
 class NQEnv(gym.Env):
     metadata = {'render.modes': ['console']}
 
     def __init__(self):
+        super(NQEnv, self).__init__()
         self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Box(low=0, high=255, shape=(70, 70, 1), dtype=np.uint8)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
@@ -39,6 +44,7 @@ class NQEnv(gym.Env):
 
         actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
         try:
+            str(actions[action])
             print("action: " + str(actions[action]) + "  which stage: " + str(self._stage))
         except:
             print("only integer scalar array error: " + str(action))
@@ -93,9 +99,13 @@ class NQEnv(gym.Env):
             self._raw_screenshot = screenshot
             return self._state, 0.0, False, {}
 
-        if self._stage == GameStage.interval and self._first_game_stage_not_finished:
+        if self._stage == GameStage.interval:
+                # and self._first_game_stage_not_finished:
+            time.sleep(0.1)
+            self.press_key(3)
+            time.sleep(0.1)
             self.press_spacebar()
-            time.sleep(0.2)
+            time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
             self._raw_screenshot = screenshot
@@ -119,7 +129,12 @@ class NQEnv(gym.Env):
                return self._state, -(self._infinite_loop_safe_guard * 0.0008), False, {}
 
         if self._stage == GameStage.interval_upgrade:
-            self.press_key(action)
+            # self.press_key(action)
+            time.sleep(0.1)
+            self.press_key(0)
+            time.sleep(0.1)
+            self.press_spacebar()
+            time.sleep(0.1)
             self._infinite_loop_safe_guard = self._infinite_loop_safe_guard + 1
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
@@ -207,6 +222,10 @@ class NQEnv(gym.Env):
                          or next_stage_enum == GameStage.interval_upgrade
                          or next_stage_enum == GameStage.died
                          or next_stage_enum == GameStage.starting_page):
+            if next_stage_enum == GameStage.game_over:
+                print("game over without death scene")
+                tf.keras.preprocessing.image.save_img("current_gameover_without_death_scene.png", self._raw_screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("next_stage_gameover_without_death_scene.png", next_screenshot, file_format='png')
             self._stage = next_stage_enum
             self._raw_screenshot = next_screenshot
             # print("game over penalty is given, next stage: " + str(next_stage_enum))
@@ -249,7 +268,8 @@ class NQEnv(gym.Env):
         next_jewel_no = extract_jewel_game_in_progress(screenshot_after_action)
 
         if kill_no is None and jewel_no is None and next_kill_no is None and next_jewel_no is None:
-            return 0.05
+            # print("reward: 0.05")
+            return reward_for_being_alive
         elif all(v is not None for v in [kill_no, jewel_no, next_kill_no, next_jewel_no]):
             kill_diff = next_kill_no - kill_no
             if kill_diff < 0 or kill_diff > 10:
@@ -257,26 +277,32 @@ class NQEnv(gym.Env):
             jewel_diff = next_jewel_no - jewel_no
             if jewel_diff < 0 or jewel_diff > 70:
                    jewel_diff = 0
-            reward = (kill_diff * 0.01) + (jewel_diff * 0.001) + 0.05
+            reward = (kill_diff * kill_reward_point) + (jewel_diff * jewel_reward_point) + reward_for_being_alive
             if kill_no > 10 :
                    tf.keras.preprocessing.image.save_img("wrong_kill_count_" + str(kill_no) + ".png", screenshot, file_format='png')
-                   print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-                          " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+            #               " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
             return reward
         elif (kill_no is None or next_kill_no is None) and jewel_no is not None and next_jewel_no is not None:
             jewel_diff = next_jewel_no - jewel_no
             if jewel_diff < 0 or jewel_diff > 70:
                   jewel_diff = 0
-            return (jewel_diff * 0.001) + 0.05
+            reward = (jewel_diff * jewel_reward_point) + reward_for_being_alive
+            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+            #       " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+            return reward
         elif kill_no is not None and next_kill_no is not None and (jewel_no is None or next_jewel_no is None):
             kill_diff = next_kill_no - kill_no
             if kill_diff < 0 or kill_diff > 10:
                    kill_diff = 0
-            return (kill_diff * 0.01) + 0.05
+            reward = (kill_diff * kill_reward_point) + reward_for_being_alive
+            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+            #       " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+            return reward
         else:
-            print("cnn recognition error: killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-                  " next Kill_no" + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
-            return 0.05
+            # print("cnn recognition error: killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
+            #       " next Kill_no" + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
+            return reward_for_being_alive
 
     def press_spacebar(self):
         PressKey(spacebar)

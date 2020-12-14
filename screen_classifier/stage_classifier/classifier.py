@@ -60,20 +60,22 @@ x_train = load_images_to_np_array(image_file_list)
 # strategy = tf.distribute.MirroredStrategy()
 # with strategy.scope():
 i = Input(shape=x_train[0].shape)
-nq_network = Conv2D(100, (3, 3), activation='relu', padding='same')(i)
+nq_network = Conv2D(90, (3, 3), activation='relu', padding='same')(i)
 nq_network = BatchNormalization()(nq_network)
 nq_network = MaxPooling2D((2, 2))(nq_network)
-nq_network = Conv2D(110, (3, 3), activation='relu', padding='same')(nq_network)
-nq_network = BatchNormalization()(nq_network)
-nq_network = MaxPooling2D((2, 2))(nq_network)
+nq_network = Dropout(0.05)(nq_network)
 nq_network = Conv2D(120, (3, 3), activation='relu', padding='same')(nq_network)
+nq_network = BatchNormalization()(nq_network)
+nq_network = MaxPooling2D((2, 2))(nq_network)
+nq_network = Dropout(0.05)(nq_network)
+nq_network = Conv2D(150, (4, 4), activation='relu', padding='same')(nq_network)
 nq_network = BatchNormalization()(nq_network)
 nq_network = MaxPooling2D((2, 2))(nq_network)
 
 nq_network = Flatten()(nq_network)
-nq_network = Dropout(0.2)(nq_network)
-nq_network = Dense(120, activation='relu')(nq_network)
 nq_network = Dropout(0.1)(nq_network)
+nq_network = Dense(600, activation='relu')(nq_network)
+nq_network = Dropout(0.05)(nq_network)
 nq_network = Dense(12, activation='softmax')(nq_network)
 
 model = Model(inputs=i, outputs=nq_network)
@@ -85,16 +87,18 @@ print("x_train[0].shape:", x_train[0].shape)
 weightPath = "nq_screen_weight.h5"
 checkpoint = ModelCheckpoint(weightPath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
-batch_size = 50
+batch_size = 200
 
-data_generator = tf.keras.preprocessing.image.ImageDataGenerator(width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, vertical_flip=True)
+data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
+        #brightness_range=[0.9,1.1], this doesn't work and corrupt the training process
+        width_shift_range=0.1, height_shift_range=0.1)
 train_generator = data_generator.flow(x_train, y_train, batch_size)
 
 ############# LOAD ################### LOAD ################### LOAD ######
 loaded_model = load_model(weightPath)
 loaded_model.summary()
 
-loaded_model.fit(train_generator, epochs=800, batch_size=batch_size, callbacks=callbacks_list)
+loaded_model.fit(train_generator, epochs=500, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0
@@ -107,9 +111,9 @@ loaded_model.fit(train_generator, epochs=800, batch_size=batch_size, callbacks=c
 ############# LOAD ################### LOAD ################### LOAD ######
 
 ############### Training ############### Training ############### Training ###############
-# batch_size = 60
+# batch_size = 200
 # steps_per_epoch = x_train.shape[0]
-# model.fit(x_train, y_train, epochs=600, batch_size=batch_size, callbacks=callbacks_list)
+# model.fit(train_generator, epochs=90000, batch_size=batch_size, callbacks=callbacks_list)
 ############### Training ############### Training ############### Training ###############
 
 
@@ -168,10 +172,10 @@ if misclassified_idx.size > 0:
     plt.title("True label: %s Predicted: %s" % (y_train[i], p_test[i]))
     plt.show()
 
-# Confusion matrix, without normalization
-# [[77  0  0  0  0  0  0  0  0  0  0  0]
-#  [ 0 33  0  0  0  0  0  0  0  0  0  0]
-#  [ 0  0  7  0  0  0  0  0  0  0  0  0]
+# # Confusion matrix, without normalization
+# [[85  0  0  0  0  0  0  0  0  0  0  0]
+#  [ 0 39  0  0  0  0  0  0  0  0  0  0]
+#  [ 0  0 12  0  0  0  0  0  0  0  0  0]
 #  [ 0  0  0 18  0  0  0  0  0  0  0  0]
 #  [ 0  0  0  0  3  0  0  0  0  0  0  0]
 #  [ 0  0  0  0  0  8  0  0  0  0  0  0]
@@ -180,4 +184,4 @@ if misclassified_idx.size > 0:
 #  [ 0  0  0  0  0  0  0  0  4  0  0  0]
 #  [ 0  0  0  0  0  0  0  0  0  6  0  0]
 #  [ 0  0  0  0  0  0  0  0  0  0  1  0]
-#  [ 0  0  0  0  0  0  0  0  0  0  0 66]]
+#  [ 0  0  0  0  0  0  0  0  0  0  0 70]]

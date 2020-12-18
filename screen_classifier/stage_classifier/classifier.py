@@ -110,7 +110,7 @@ train_generator = data_generator.flow(x_train, y_train, batch_size)
 loaded_model = load_model(weightPath)
 # loaded_model.summary()
 #
-r = loaded_model.fit(train_generator, validation_data=(x_test, y_test), epochs=100, batch_size=batch_size, callbacks=callbacks_list)
+r = loaded_model.fit(train_generator, validation_data=(x_test, y_test), epochs=500, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0

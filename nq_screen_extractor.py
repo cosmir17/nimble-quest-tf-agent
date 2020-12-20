@@ -151,8 +151,8 @@ def is_back_button_selected(np_img):
 
 
 
-# prediction = tf.image.decode_png(tf.io.read_file("83_0_.png"), channels=3)
+# prediction = tf.image.decode_png(tf.io.read_file("wrong_kill_count_60.png"), channels=3)
 # prediction = tf.keras.preprocessing.image.img_to_array(prediction)
-# # selected = is_back_button_selected(prediction)
+# # # selected = is_back_button_selected(prediction)
 # selected = extract_kill_game_in_progress(prediction)
 # print("score: " + str(selected))

@@ -1,5 +1,5 @@
 import time
-
+import random
 import gym
 from gym import spaces
 
@@ -7,8 +7,10 @@ from directkeys import *
 from nq_screen_extractor import *
 from tensorflow import keras
 
-jewel_reward_point = 0.0001
-kill_reward_point = 0.001
+screenshot_upper_bound = 90000
+
+jewel_reward_point = 0.00000
+kill_reward_point = 0.0000
 reward_for_being_alive = 0.001
 
 
@@ -17,8 +19,8 @@ class NQEnv(gym.Env):
 
     def __init__(self):
         super(NQEnv, self).__init__()
-        self.action_space = spaces.Discrete(6)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(70, 70, 1), dtype=np.uint8)
+        self.action_space = spaces.Discrete(5)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(130, 130, 1), dtype=np.uint8)
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
         self._episode_ended = False
         self._stage = stage_enum
@@ -42,7 +44,7 @@ class NQEnv(gym.Env):
         if self._episode_ended:
            return self.reset()
 
-        actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'spacebar', 'nothing']
+        actions = ['left_arrow', 'right_arrow', 'up_arrow', 'down_arrow', 'nothing']
         try:
             str(actions[action])
             print("action: " + str(actions[action]) + "  which stage: " + str(self._stage))
@@ -52,16 +54,17 @@ class NQEnv(gym.Env):
             return self._state, 0.0, False, {}
 
         if (self._stage == GameStage.game_over or self._stage == GameStage.died) and is_back_button_selected(self._raw_screenshot):
+            time.sleep(0.5)
             self.press_spacebar()
-            time.sleep(0.3)
+            time.sleep(0.5)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._episode_ended = True
             if not self._game_over_penalty_is_given:
-                tf.keras.preprocessing.image.save_img("current_2.png", self._raw_screenshot, file_format='png')
-                tf.keras.preprocessing.image.save_img("next_stage_2.png", screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("current_2" + str(random.randint(0, screenshot_upper_bound)) + ".png", self._raw_screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("next_stage_2" + str(random.randint(0, screenshot_upper_bound)) + ".png", screenshot, file_format='png')
                 self._stage = stage_enum
                 self._raw_screenshot = screenshot
-                print("game_over_penalty_ was not _given, applying penalty")
+                print("game_over_penalty_ was not _given, applying penalty") #it's game start page
                 return self._state, -2.0, True, {}
             else:
                 self._stage = stage_enum
@@ -69,12 +72,13 @@ class NQEnv(gym.Env):
                 return self._state, 0.0, True, {}
 
         if self._stage == GameStage.game_over or self._stage == GameStage.died:
-            time.sleep(0.1)
+            time.sleep(0.5)
             self.press_key(2)
+            time.sleep(0.5)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             if stage_enum == GameStage.in_progress:
-                tf.keras.preprocessing.image.save_img("current.png", self._raw_screenshot, file_format='png')
-                tf.keras.preprocessing.image.save_img("next_stage.png", screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("current" + str(random.randint(0, screenshot_upper_bound)) + ".png", self._raw_screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("next_stage" + str(random.randint(0, screenshot_upper_bound)) + ".png", screenshot, file_format='png')
                 print("*** CNN game over recognition error ***, stage: " + str(self._stage) + " next stage: in_progress")
             self._stage = stage_enum
             self._raw_screenshot = screenshot
@@ -100,33 +104,17 @@ class NQEnv(gym.Env):
             return self._state, 0.0, False, {}
 
         if self._stage == GameStage.interval:
-                # and self._first_game_stage_not_finished:
             time.sleep(0.1)
             self.press_key(3)
             time.sleep(0.1)
             self.press_spacebar()
-            time.sleep(0.1)
+            time.sleep(0.5)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
+            # if stage_enum == GameStage.in_progress and not self._first_game_stage_not_finished:
+            #     time.sleep(1.5)
             self._stage = stage_enum
             self._raw_screenshot = screenshot
             return self._state, 0.0, False, {}
-
-        if self._stage == GameStage.interval: #after first game stage is done
-            self._infinite_loop_safe_guard = self._infinite_loop_safe_guard + 1
-            self.press_key(action)
-            time.sleep(0.2)
-            screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
-            self._stage = stage_enum
-            self._raw_screenshot = screenshot
-            if stage_enum == GameStage.in_progress:
-                self._infinite_loop_safe_guard = 0
-                return self._state, 0.005, False, {}
-            elif self._infinite_loop_safe_guard > 60:
-                print("looping in Interval stage for more than 60 times")
-                self._episode_ended = True
-                return self._state, -0.01, True, {}
-            else:
-               return self._state, -(self._infinite_loop_safe_guard * 0.0008), False, {}
 
         if self._stage == GameStage.interval_upgrade:
             # self.press_key(action)
@@ -156,6 +144,7 @@ class NQEnv(gym.Env):
 
         if self._stage == GameStage.interval_sorry:
             self.press_spacebar()
+            time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
             self._raw_screenshot = screenshot
@@ -163,6 +152,7 @@ class NQEnv(gym.Env):
 
         if self._stage == GameStage.game_over_sorry:
             self.press_spacebar()
+            time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
             self._raw_screenshot = screenshot
@@ -170,15 +160,21 @@ class NQEnv(gym.Env):
 
         if self._stage == GameStage.store_page:
             self.press_key(3)  # select back button
+            time.sleep(0.1)
             self.press_spacebar()
+            time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
             self._raw_screenshot = screenshot
             self._episode_ended = True
-            return self._state, 0.0, False, {}
+            if self._game_over_penalty_is_given:
+                return self._state, 0.0, True, {}
+            else:
+                return self._state, -2.0, True, {}
 
         if self._stage == GameStage.main_page:
             self.press_spacebar()
+            time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
             self._stage = stage_enum
             self._raw_screenshot = screenshot
@@ -224,8 +220,8 @@ class NQEnv(gym.Env):
                          or next_stage_enum == GameStage.starting_page):
             if next_stage_enum == GameStage.game_over:
                 print("game over without death scene")
-                tf.keras.preprocessing.image.save_img("current_gameover_without_death_scene.png", self._raw_screenshot, file_format='png')
-                tf.keras.preprocessing.image.save_img("next_stage_gameover_without_death_scene.png", next_screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("current_" + str(random.randint(0, screenshot_upper_bound)) + ".png", self._raw_screenshot, file_format='png')
+                tf.keras.preprocessing.image.save_img("next_stage_" + str(random.randint(0, screenshot_upper_bound)) + ".png", next_screenshot, file_format='png')
             self._stage = next_stage_enum
             self._raw_screenshot = next_screenshot
             # print("game over penalty is given, next stage: " + str(next_stage_enum))
@@ -236,6 +232,7 @@ class NQEnv(gym.Env):
             print("**finished stage")
             self._stage = next_stage_enum
             self._raw_screenshot = next_screenshot
+            self._first_game_stage_not_finished = False
             return self._state, 0.2, False, {}
 
         if self._stage == GameStage.in_progress:
@@ -253,7 +250,7 @@ class NQEnv(gym.Env):
     def take_screenshot_save_to_selfstate(self):
         i = capture_window()
         stage_enum = which_stage(i)
-        img_resized = tf.image.resize(i, (70, 70))
+        img_resized = tf.image.resize(i, (130, 130))
         img_resized = tf.image.rgb_to_grayscale(img_resized)
         img_resized = keras.preprocessing.image.img_to_array(img_resized)
         img_resized_255 = img_resized * 255
@@ -262,57 +259,17 @@ class NQEnv(gym.Env):
         return i, stage_enum
 
     def calculate_reward_game_in_progress(self, screenshot, stage_enum, screenshot_after_action, next_stage_enum):
-        kill_no = extract_kill_game_in_progress(screenshot)
-        jewel_no = extract_jewel_game_in_progress(screenshot)
-        next_kill_no = extract_kill_game_in_progress(screenshot_after_action)
-        next_jewel_no = extract_jewel_game_in_progress(screenshot_after_action)
-
-        if kill_no is None and jewel_no is None and next_kill_no is None and next_jewel_no is None:
-            # print("reward: 0.05")
-            return reward_for_being_alive
-        elif all(v is not None for v in [kill_no, jewel_no, next_kill_no, next_jewel_no]):
-            kill_diff = next_kill_no - kill_no
-            if kill_diff < 0 or kill_diff > 10:
-                   kill_diff = 0
-            jewel_diff = next_jewel_no - jewel_no
-            if jewel_diff < 0 or jewel_diff > 70:
-                   jewel_diff = 0
-            reward = (kill_diff * kill_reward_point) + (jewel_diff * jewel_reward_point) + reward_for_being_alive
-            if kill_no > 10 :
-                   tf.keras.preprocessing.image.save_img("wrong_kill_count_" + str(kill_no) + ".png", screenshot, file_format='png')
-            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-            #               " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
-            return reward
-        elif (kill_no is None or next_kill_no is None) and jewel_no is not None and next_jewel_no is not None:
-            jewel_diff = next_jewel_no - jewel_no
-            if jewel_diff < 0 or jewel_diff > 70:
-                  jewel_diff = 0
-            reward = (jewel_diff * jewel_reward_point) + reward_for_being_alive
-            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-            #       " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
-            return reward
-        elif kill_no is not None and next_kill_no is not None and (jewel_no is None or next_jewel_no is None):
-            kill_diff = next_kill_no - kill_no
-            if kill_diff < 0 or kill_diff > 10:
-                   kill_diff = 0
-            reward = (kill_diff * kill_reward_point) + reward_for_being_alive
-            # print("reward: " + str(reward) + " killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-            #       " next Kill_no: " + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
-            return reward
-        else:
-            # print("cnn recognition error: killno: " + str(kill_no) + " jewel_no: " + str(jewel_no) +
-            #       " next Kill_no" + str(next_kill_no) + " next jewel_no: " + str(next_jewel_no))
-            return reward_for_being_alive
+        return reward_for_being_alive
 
     def press_spacebar(self):
         PressKey(spacebar)
         time.sleep(0.1)
 
     def press_key(self, action):
-        keys_to_press = [[leftarrow], [rightarrow], [uparrow], [downarrow], [spacebar]]
-        if action != 5:
+        keys_to_press = [[leftarrow], [rightarrow], [uparrow], [downarrow]]
+        if action != 4:
              for key in keys_to_press[action]:
                   PressKey(key)
-                  time.sleep(0.05)
+                  time.sleep(0.01)
         else:
-             time.sleep(0.07)
+             time.sleep(0.01)

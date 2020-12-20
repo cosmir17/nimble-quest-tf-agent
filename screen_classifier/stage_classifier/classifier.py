@@ -1,6 +1,7 @@
 import h5py
 import os
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
@@ -110,7 +111,7 @@ train_generator = data_generator.flow(x_train, y_train, batch_size)
 loaded_model = load_model(weightPath)
 # loaded_model.summary()
 #
-r = loaded_model.fit(train_generator, validation_data=(x_test, y_test), epochs=500, batch_size=batch_size, callbacks=callbacks_list)
+# r = loaded_model.fit(train_generator, validation_data=(x_test, y_test), epochs=500, batch_size=batch_size, callbacks=callbacks_list)
 
 # prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
 # prediction = tf.cast(prediction, tf.float32) / 255.0
@@ -128,16 +129,16 @@ r = loaded_model.fit(train_generator, validation_data=(x_test, y_test), epochs=5
 # r = model.fit(train_generator, validation_data=(x_test, y_test), epochs=6000, batch_size=batch_size, callbacks=callbacks_list)
 ############### Training ############### Training ############### Training ###############
 
-plt.plot(r.history['loss'], label='loss')
-plt.plot(r.history['val_loss'], label='val_loss')
-plt.legend()
-plt.show()
-
-# Plot accuracy per iteration
-plt.plot(r.history['accuracy'], label='acc')
-plt.plot(r.history['val_accuracy'], label='val_acc')
-plt.legend()
-plt.show()
+# plt.plot(r.history['loss'], label='loss')
+# plt.plot(r.history['val_loss'], label='val_loss')
+# plt.legend()
+# plt.show()
+#
+# # Plot accuracy per iteration
+# plt.plot(r.history['accuracy'], label='acc')
+# plt.plot(r.history['val_accuracy'], label='val_acc')
+# plt.legend()
+# plt.show()
 
 # Confusion matrix part is copied from: https://colab.research.google.com/drive/1pdzZ2MB2g6CT_-bT0D0bO2IKyghOhlM_
 from sklearn.metrics import confusion_matrix

@@ -12,7 +12,7 @@ run_terminator_listener()
 
 env = DummyVecEnv([lambda: NQEnv()])
 # Train the agent
-model = PPO(CnnPolicy, env, verbose=2).learn(total_timesteps=30000, log_interval=1)
+model = PPO(CnnPolicy, env, verbose=2).learn(total_timesteps=50000, log_interval=1)
 model.save("nimble_quest_stable_baselines_ppo_20000_1")
 
 
@@ -26,15 +26,15 @@ model.save("nimble_quest_stable_baselines_ppo_20000_1")
 #     model.save("nimble_quest_stable_baselines_ppo_20000_" + str(i + 1))
 #     mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
-model = PPO.load("nimble_quest_stable_baselines_ppo_20000_1", tensorboard_log="my_tf_board")
-model.set_env(env)
-model.learn(total_timesteps=30000, log_interval=1, reset_num_timesteps=False)
-model.save("nimble_quest_stable_baselines_ppo_20000_2")
-
-model = PPO.load("nimble_quest_stable_baselines_ppo_20000_2", tensorboard_log="my_tf_board")
-model.set_env(env)
-model.learn(total_timesteps=30000, log_interval=1, reset_num_timesteps=False)
-model.save("nimble_quest_stable_baselines_ppo_20000_3")
+# model = PPO.load("nimble_quest_stable_baselines_ppo_20000_1", tensorboard_log="my_tf_board")
+# model.set_env(env)
+# model.learn(total_timesteps=30000, log_interval=1, reset_num_timesteps=False)
+# model.save("nimble_quest_stable_baselines_ppo_20000_2")
+#
+# model = PPO.load("nimble_quest_stable_baselines_ppo_20000_2", tensorboard_log="my_tf_board")
+# model.set_env(env)
+# model.learn(total_timesteps=30000, log_interval=1, reset_num_timesteps=False)
+# model.save("nimble_quest_stable_baselines_ppo_20000_3")
 
 model = PPO.load("nimble_quest_stable_baselines_ppo_20000_3", tensorboard_log="my_tf_board")
 model.set_env(env)

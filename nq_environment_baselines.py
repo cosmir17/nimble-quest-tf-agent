@@ -3,7 +3,7 @@ import random
 import gym
 from gym import spaces
 
-from directkeys import *
+from key_pressor.key_pressor_creator import *
 from nq_screen_extractor import *
 from tensorflow import keras
 
@@ -28,6 +28,7 @@ class NQEnv(gym.Env):
         self._infinite_loop_safe_guard = 0
         self._first_game_stage_not_finished = True
         self._game_over_penalty_is_given = False
+        self.key_pressor = create_key_pressor()
 
     def reset(self): #reset this python app's state for a new game
         print("RESET")
@@ -262,14 +263,13 @@ class NQEnv(gym.Env):
         return reward_for_being_alive
 
     def press_spacebar(self):
-        PressKey(spacebar)
+        self.key_pressor.press_key(self.key_pressor.spacebar)
         time.sleep(0.1)
 
     def press_key(self, action):
-        keys_to_press = [[leftarrow], [rightarrow], [uparrow], [downarrow]]
+        keys_to_press = [[self.key_pressor.leftarrow], [self.key_pressor.rightarrow], [self.key_pressor.uparrow], [self.key_pressor.downarrow]]
         if action != 4:
-             for key in keys_to_press[action]:
-                  PressKey(key)
-                  time.sleep(0.01)
+            for key in keys_to_press[action]:
+                self.key_pressor.press_key(key)
         else:
-             time.sleep(0.01)
+            time.sleep(0.01)

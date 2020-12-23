@@ -26,14 +26,14 @@ def capture_window():
 
 
 def which_stage(img):
-    img_resized = tf.image.resize(img, (100, 100))
+    img_resized = tf.image.resize(img, (100, 100)) #stage
     prediction = stage_model.predict(np.array([img_resized]))
     found = np.argmax(prediction)
     return GameStage(found)
 
 
 def predict_from_cnn(img):
-    img = tf.image.resize(img, (35, 35))
+    img = tf.image.resize(img, (35, 35)) #number
     if np.mean(img) == 255 or np.mean(img) == 0:
         found = ""
     else:
@@ -121,6 +121,8 @@ def recognise_digit_image(cropped, color_range=None):
                 cv2.drawContours(mask, [c], -1, (255, 255, 255), -1)
                 roi = cv2.bitwise_not(roi)
                 roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)
+                # cv2.imshow('thresh', roi)
+                # cv2.waitKey(0)
                 score = score + predict_from_cnn(roi)
         score_int = convert_score_to_int(score)
         return score_int
@@ -149,8 +151,8 @@ def is_back_button_selected(np_img):
 
 
 
-# prediction = tf.image.decode_png(tf.io.read_file("83_0_.png"), channels=3)
+# prediction = tf.image.decode_png(tf.io.read_file("wrong_kill_count_60.png"), channels=3)
 # prediction = tf.keras.preprocessing.image.img_to_array(prediction)
-# # selected = is_back_button_selected(prediction)
+# # # selected = is_back_button_selected(prediction)
 # selected = extract_kill_game_in_progress(prediction)
 # print("score: " + str(selected))

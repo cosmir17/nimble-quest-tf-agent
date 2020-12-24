@@ -49,7 +49,8 @@ def is_back_button_selected(np_img):
     back_button_color = np_img[585][700]
     # [0.07450981 0.60784316 0.00392157] highlighted
     # [0.19607843 0.6117647  0.14509805] unhighlighted
-    if np.allclose(back_button_color, np.array([0.07450981, 0.60784316, 0.00392157])):
+    if np.allclose(back_button_color, np.array([0.07450981, 0.60784316, 0.00392157]),
+                   rtol=1.e-1, atol=1.e-1):
         return True
     else:
         return False

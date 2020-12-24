@@ -1,7 +1,7 @@
 import h5py
 import os
 import numpy as np
-import random
+import platform
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
@@ -52,13 +52,16 @@ def convert_to_x_y(image_file_list, image_folder):
     x = load_images_to_np_array(image_file_list, image_folder)
     return x, y
 
+os_name = platform.system()
 
 train_image_file_list = os.listdir(train_image_folder)
-train_image_file_list.remove(".DS_Store")
+if os_name == "Darwin":
+    train_image_file_list.remove(".DS_Store")
 x_train, y_train = convert_to_x_y(train_image_file_list, train_image_folder)
 
 test_image_file_list = os.listdir(test_image_folder)
-test_image_file_list.remove(".DS_Store")
+if os_name == "Darwin":
+    test_image_file_list.remove(".DS_Store")
 x_test, y_test = convert_to_x_y(test_image_file_list, test_image_folder)
 
 # strategy = tf.distribute.MirroredStrategy()

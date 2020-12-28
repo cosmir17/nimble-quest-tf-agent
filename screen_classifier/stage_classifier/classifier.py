@@ -110,14 +110,14 @@ print("x_train[0].shape:", x_train[0].shape)
 
 
 def log_confusion_matrix(epoch, logs):
-    p_train = model.predict(x_train).argmax(axis=1)  # side effect, necessary evil due to the tf design
+    p_train = model.predict_on_batch(x_train).argmax(axis=1)  # side effect, necessary evil due to the tf design
     y_train_m = y_train.argmax(axis=1)
     cm_train = confusion_matrix(y_train_m, p_train)
     train_figure = plot_confusion_matrix(cm_train, list(range(12)))
     cm_train_image = plot_figure_to_image(train_figure)
     mismatched_train_img = plot_mismatched_images(p_train, x_train, y_train_m, class_names)
 
-    p_test_m = model.predict(x_test).argmax(axis=1)  # side effect, necessary evil due to the tf design
+    p_test_m = model.predict_on_batch(x_test).argmax(axis=1)  # side effect, necessary evil due to the tf design
     y_test_m = y_test.argmax(axis=1)
     cm_test = confusion_matrix(y_test_m, p_test_m)
     test_figure = plot_confusion_matrix(cm_test, list(range(12)))

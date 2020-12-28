@@ -26,7 +26,8 @@ def capture_window():
 
 def which_stage(img):
     img_resized = tf.image.resize(img, (100, 100)) #stage
-    prediction = stage_model.predict(np.array([img_resized]))
+    # prediction = stage_model.predict(np.array([img_resized]))
+    prediction = stage_model.predict_on_batch(np.array([img_resized]))
     found = np.argmax(prediction)
     return GameStage(found)
 

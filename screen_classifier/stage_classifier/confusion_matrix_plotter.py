@@ -44,7 +44,7 @@ def plot_mismatched_images(p, x, y, class_names):
         figure = plt.figure(figsize=(6, 3))
         img = x[i]
         plt.imshow(img, cmap='gray')
-        plt.title("True label: %s __ Predicted: %s" % (class_names[y[i]], class_names[p[i]]))
+        plt.title("Predicted: %s  ** Should be: %s " % (class_names[p[i]], class_names[y[i]]))
         figure_image = plot_figure_to_image(figure)
         imgs.append(figure_image[0])
     return imgs

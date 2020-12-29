@@ -6,19 +6,16 @@ from gym import spaces
 from key_pressor.key_pressor_creator import *
 from nq_screen_extractor import *
 from tensorflow import keras
-from power_switch import run_terminator_listener
 
 screenshot_upper_bound = 90000
 
 jewel_reward_point = 0.00000
 kill_reward_point = 0.0000
-reward_for_being_alive = 0.001
+reward_for_being_alive = 0.0
 
 
 class NQEnv(gym.Env):
     metadata = {'render.modes': ['console']}
-
-    run_terminator_listener()
 
     def __init__(self):
         super(NQEnv, self).__init__()
@@ -224,16 +221,28 @@ class NQEnv(gym.Env):
             return self._state, 1.0, False, {}
 
         if self._stage == GameStage.in_progress:
+            print("unexpected route - in progress => " + next_stage_enum.name)
+            tf.keras.preprocessing.image.save_img(
+                "unexpected_progress_c" + str(random.randint(0, screenshot_upper_bound)) + ".png",
+                self._raw_screenshot, file_format='png')
+            tf.keras.preprocessing.image.save_img(
+                "unexpected_progress_n" + str(random.randint(0, screenshot_upper_bound)) + ".png", next_screenshot,
+                file_format='png')
             self._stage = next_stage_enum
             self._raw_screenshot = next_screenshot
-            print("unexpected route - in progress => " + next_stage_enum.name)
             self._game_over_penalty_is_given = True
             return self._state, -2.0, False, {}
 
-        self._stage = next_stage_enum
-        self._raw_screenshot = next_screenshot
         self._game_over_penalty_is_given = True
         print("unexpected route ****** which stage in next turn: " + next_stage_enum.name)
+        tf.keras.preprocessing.image.save_img(
+            "unexpected_final_progress_c" + str(random.randint(0, screenshot_upper_bound)) + ".png",
+            self._raw_screenshot, file_format='png')
+        tf.keras.preprocessing.image.save_img(
+            "unexpected_final_progress_n" + str(random.randint(0, screenshot_upper_bound)) + ".png", next_screenshot,
+            file_format='png')
+        self._stage = next_stage_enum
+        self._raw_screenshot = next_screenshot
         return self._state, -2.0, False, {}
 
     def take_screenshot_save_to_selfstate(self):

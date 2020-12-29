@@ -1,2 +1,3 @@
 # Project exclude paths
 /venv/
+/screen_classifier/stage_classifier/logs/

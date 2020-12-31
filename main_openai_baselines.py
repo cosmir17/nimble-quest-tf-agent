@@ -22,7 +22,7 @@ run_terminator_listener()
 # tf.compat.v1.disable_eager_execution()
 
 save_args = ["--alg", "ppo2", "--env", "nq_gym:nq-v0", "--network", "cnn",
-            "--num_timesteps", "180000", "--save_path", "openai_nq_weight", "--log_path", "logs"]
+            "--num_timesteps", "500000", "--save_path", "openai_nq_weight", "--log_path", "logs"]
 
 load_args = ["--alg", "ppo2", "--env", "nq_gym:nq-v0", "--network", "cnn",
             "--num_timesteps", "0", "--load_path", "openai_nq_weight", "--log_path", "logs",

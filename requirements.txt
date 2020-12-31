@@ -1,0 +1,11 @@
+gym~=0.13.1
+tensorflow~=2.4.0
+setuptools~=51.1.0
+pynput~=1.7.2
+psutil~=5.8.0
+h5py~=2.10.0
+numpy~=1.19.4
+matplotlib~=3.3.3
+Pillow~=8.0.1
+mss~=6.1.0
+baselines~=0.1.5

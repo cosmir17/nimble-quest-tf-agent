@@ -11,6 +11,7 @@ stage_weight_path = "screen_classifier/stage_classifier/nq_screen_weight.h5"
 stage_model = load_model(stage_weight_path)
 os_name = platform.system()
 
+
 # 1261 X 702
 def capture_window():
     with mss() as sct:
@@ -25,7 +26,7 @@ def capture_window():
 
 
 def which_stage(img):
-    img_resized = tf.image.resize(img, (100, 100)) #stage
+    img_resized = tf.image.resize(img, (100, 100))  # stage
     prediction = stage_model.predict_on_batch(np.array([img_resized]))
     found = np.argmax(prediction)
     return GameStage(found)

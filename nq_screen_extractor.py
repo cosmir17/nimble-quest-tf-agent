@@ -4,6 +4,7 @@ import tensorflow as tf
 from PIL import Image
 import matplotlib.pyplot as plt
 from mss import mss
+from tensorflow import keras
 from tensorflow.keras.models import load_model
 from screen_classifier.stage_classifier.game_stage import GameStage
 
@@ -20,13 +21,16 @@ def capture_window():
             monitor = {"top": 15, "left": 1, "width": 1261, "height": 702}
         sct_img = sct.grab(monitor)
         img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-        img = np.array(img)
-        img = img / 255.0
-        return img.astype(np.float32)
+        img = keras.preprocessing.image.img_to_array(img)
+        img = tf.image.resize(img, (130, 130))
+        return img
 
 
 def which_stage(img):
     img_resized = tf.image.resize(img, (100, 100))  # stage
+    img_resized = keras.preprocessing.image.img_to_array(img_resized)
+    img_resized = img_resized / 255.0
+    img_resized = img_resized.astype(np.float32)
     prediction = stage_model.predict_on_batch(np.array([img_resized]))
     found = np.argmax(prediction)
     return GameStage(found)
@@ -47,8 +51,9 @@ def convert_raw_scren_to_tf_np(sct_img):
 
 
 def is_back_button_selected(np_img):
-    back_button_color = np_img[585][700]
-    if np.allclose(back_button_color, np.array([0.07450981, 0.60784316, 0.00392157]),
+    np_img = np_img.numpy()
+    back_button_color = np_img[103][71]
+    if np.allclose(back_button_color, np.array([11, 83, 1]),
                    rtol=1.e-1, atol=1.e-1):
         return True
     else:

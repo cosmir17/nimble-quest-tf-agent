@@ -248,12 +248,10 @@ class NQEnv(gym.Env):
     def take_screenshot_save_to_selfstate(self):
         i = capture_window()
         stage_enum = which_stage(i)
-        img_resized = tf.image.resize(i, (130, 130))
-        img_resized = tf.image.rgb_to_grayscale(img_resized)
-        img_resized = keras.preprocessing.image.img_to_array(img_resized)
-        img_resized_255 = img_resized * 255
-        img_resized_255 = img_resized_255.astype(np.uint8)
-        self._state = img_resized_255
+        img_processed = tf.image.rgb_to_grayscale(i)
+        img_processed = keras.preprocessing.image.img_to_array(img_processed)
+        img_processed = img_processed.astype(np.uint8)
+        self._state = img_processed
         return i, stage_enum
 
     def calculate_reward_game_in_progress(self, screenshot, stage_enum, screenshot_after_action, next_stage_enum):

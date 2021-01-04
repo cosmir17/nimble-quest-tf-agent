@@ -7,6 +7,8 @@ from mss import mss
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 from screen_classifier.stage_classifier.game_stage import GameStage
+import random
+import cv2
 
 stage_weight_path = "screen_classifier/stage_classifier/nq_screen_weight.h5"
 stage_model = load_model(stage_weight_path)
@@ -23,6 +25,7 @@ def capture_window():
         img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
         img = keras.preprocessing.image.img_to_array(img)
         img = tf.image.resize(img, (130, 130))
+        is_image_black(img)
         return img
 
 
@@ -36,11 +39,12 @@ def which_stage(img):
     return GameStage(found)
 
 
-def capture_window_raw():
+def capture_display():
     with mss() as sct:
-        monitor = {"top": 30, "left": 40, "width": 1261, "height": 702}
-        sct_img = sct.grab(monitor)
-        return sct_img
+        num = str(random.randint(0, 9434734734))
+        filename = "screen_is_black_" + num + ".png"
+        sct.shot(output=filename)
+        return filename
 
 
 def convert_raw_scren_to_tf_np(sct_img):
@@ -58,3 +62,10 @@ def is_back_button_selected(np_img):
         return True
     else:
         return False
+
+
+def is_image_black(image):
+    gray = cv2.cvtColor(np.float32(image), cv2.COLOR_BGR2GRAY)
+    if cv2.countNonZero(gray) == 0:
+        # filename = capture_display()
+        print("**screen_is_black : ")

@@ -8,4 +8,4 @@ numpy~=1.19.4
 matplotlib~=3.3.3
 Pillow~=8.0.1
 mss~=6.1.0
-baselines~=0.1.5
+opencv-python~=4.5.1.48

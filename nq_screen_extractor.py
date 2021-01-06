@@ -14,13 +14,17 @@ stage_weight_path = "screen_classifier/stage_classifier/nq_screen_weight.h5"
 stage_model = load_model(stage_weight_path)
 os_name = platform.system()
 
+monitor = {"top": 30, "left": 40, "width": 1261, "height": 702}  # using Magnet on Mac
+if os_name == "Linux":
+    monitor = {"top": 15, "left": 1, "width": 1261, "height": 702}
+elif os_name == "Windows":
+    
+
 
 # 1261 X 702
 def capture_window():
     with mss() as sct:
-        monitor = {"top": 30, "left": 40, "width": 1261, "height": 702}  # using Magnet on Mac
-        if os_name == "Linux" or os_name == "Windows":
-            monitor = {"top": 15, "left": 1, "width": 1261, "height": 702}
+
         sct_img = sct.grab(monitor)
         img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
         img = keras.preprocessing.image.img_to_array(img)

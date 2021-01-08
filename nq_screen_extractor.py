@@ -61,8 +61,8 @@ def convert_raw_scren_to_tf_np(sct_img):
 
 def is_back_button_selected(np_img):
     np_img = np_img.numpy()
-    back_button_color = np_img[103][71]
-    if np.allclose(back_button_color, np.array([11, 83, 1]),
+    back_button_color = np_img[106][71]
+    if np.allclose(back_button_color, np.array([10, 79, 1]),
                    rtol=1.e-1, atol=1.e-1):
         return True
     else:
@@ -73,4 +73,6 @@ def is_image_black(image):
     gray = cv2.cvtColor(np.float32(image), cv2.COLOR_BGR2GRAY)
     if cv2.countNonZero(gray) == 0:
         # filename = capture_display()
-        print("**screen_is_black : ")
+        print("**screen_is_black : "
+              # + str(filename)
+              )

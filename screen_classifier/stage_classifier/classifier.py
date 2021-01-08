@@ -1,5 +1,6 @@
 import h5py
 import os
+from os import path
 import shutil
 import datetime
 import platform
@@ -24,8 +25,8 @@ from tensorflow.keras.models import Sequential, load_model
 #     print(e)
 # debug_path = "logs\\debug\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 # tf.debugging.experimental.enable_dump_debug_info(debug_path, tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
-
-shutil.rmtree('logs')
+if path.isdir('logs'):
+    shutil.rmtree('logs')
 
 train_image_folder = "screenshots"
 test_image_folder = "test_screenshots"

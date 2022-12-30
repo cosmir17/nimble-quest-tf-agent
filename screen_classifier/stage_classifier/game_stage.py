@@ -11,7 +11,7 @@ class GameStage(Enum):
     interval_sorry = 5
     interval_upgrade = 6
     paused_game_while_in_progress = 7
-    game_over_sorry = 8
+    game_over_not_enough_tokens_sorry = 8
     store_page = 9
     main_page = 10  # first page
 

@@ -4,13 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import utils
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import Dropout, Dense
-from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPooling2D, BatchNormalization
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import Sequential, load_model
-
+from tensorflow.python.keras import utils
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.layers import Dropout, Dense
+from tensorflow.python.keras.layers import Input, Conv2D, Flatten, MaxPooling2D
+from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Sequential, load_model
 # 0 0
 # 1 1
 # 2 2

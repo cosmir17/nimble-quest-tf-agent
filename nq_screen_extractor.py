@@ -5,20 +5,21 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from mss import mss
 from tensorflow import keras
-from tensorflow.keras.models import load_model
+from tensorflow.python.keras.models import load_model
 from screen_classifier.stage_classifier.game_stage import GameStage
 import random
 import cv2
-from window_grabber import *
+
 
 stage_weight_path = "screen_classifier/stage_classifier/nq_screen_weight.h5"
 stage_model = load_model(stage_weight_path)
 os_name = platform.system()
-
+print(os_name)
 monitor = {"top": 30, "left": 40, "width": 1261, "height": 702}  # using Magnet on Mac
-if os_name == "Linux":
+if os_name == 'Linux' or os_name == 'Darwin':
     monitor = {"top": 15, "left": 1, "width": 1261, "height": 702}
 elif os_name == "Windows":
+    from window_grabber import *
     place_resize_nq_window()
     monitor = {"top": 0, "left": 0, "width": 1261, "height": 702}
 
@@ -35,6 +36,8 @@ def capture_window():
 
 
 def which_stage(img):
+    # if purple game over is there => game over
+    # if cloud is in the middle of the screen => dead
     img_resized = tf.image.resize(img, (100, 100))  # stage
     img_resized = keras.preprocessing.image.img_to_array(img_resized)
     img_resized = img_resized / 255.0

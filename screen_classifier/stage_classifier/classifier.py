@@ -7,12 +7,12 @@ import platform
 from sklearn.metrics import confusion_matrix
 from confusion_matrix_plotter import *
 from tensorflow import keras
-from tensorflow.keras import utils
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import Dropout, Dense
-from tensorflow.keras.layers import Input, Conv2D, Flatten, MaxPooling2D, BatchNormalization
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import Sequential, load_model
+from tensorflow.python.keras import utils
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.layers import Dropout, Dense
+from tensorflow.python.keras.layers import Input, Conv2D, Flatten, MaxPooling2D, BatchNormalization
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Sequential, load_model
 
 # import tensorflow as tf
 # gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -146,24 +146,25 @@ data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         width_shift_range=0.1, height_shift_range=0.1)
 train_generator = data_generator.flow(x_train, y_train, batch_size)
 
+############## Training ############### Training ############### Training ###############
+# batch_size = 200
+# steps_per_epoch = x_train.shape[0]
+# r = model.fit(train_generator, validation_data=(x_test, y_test), epochs=3000, batch_size=batch_size, callbacks=callbacks_list)
+############## Training ############### Training ############### Training ###############
+
+
 ############# LOAD ################### LOAD ################### LOAD ######
 model = load_model(weightPath)
 model.summary()
 
-r = model.fit(train_generator, validation_data=(x_test, y_test), epochs=1000, batch_size=batch_size, callbacks=callbacks_list)
+# r = model.fit(train_generator, validation_data=(x_test, y_test), epochs=1000, batch_size=batch_size, callbacks=callbacks_list)
 
-# prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
-# prediction = tf.cast(prediction, tf.float32) / 255.0
-# prediction = tf.image.resize(prediction, (100, 100))
-# prediction = keras.preprocessing.image.img_to_array(prediction)
-# p = np.array([prediction])
-# matrix = loaded_model.predict(p)
-# print(matrix)
-# print(np.argmax(matrix))
+prediction = tf.image.decode_png(tf.io.read_file("test_screenshot/113_8_.png"), channels=3)
+prediction = tf.cast(prediction, tf.float32) / 255.0
+prediction = tf.image.resize(prediction, (100, 100))
+prediction = keras.preprocessing.image.img_to_array(prediction)
+p = np.array([prediction])
+matrix = loaded_model.predict(p)
+print(matrix)
+print(np.argmax(matrix))
 ############# LOAD ################### LOAD ################### LOAD ######
-
-############### Training ############### Training ############### Training ###############
-# batch_size = 200
-# steps_per_epoch = x_train.shape[0]
-# r = model.fit(train_generator, validation_data=(x_test, y_test), epochs=3000, batch_size=batch_size, callbacks=callbacks_list)
-############### Training ############### Training ############### Training ###############

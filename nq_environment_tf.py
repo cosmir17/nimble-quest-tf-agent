@@ -149,7 +149,7 @@ class NQEnv(py_environment.PyEnvironment):
         self._raw_screenshot = screenshot
         return ts.transition(self._state, reward=0.0)
 
-    if self._stage == GameStage.game_over_sorry:
+    if self._stage == GameStage.game_over_not_enough_tokens_sorry:
         self.press_spacebar()
         screenshot, stage_enum = self.take_screenshot_save_to_selfstate()
         self._stage = stage_enum

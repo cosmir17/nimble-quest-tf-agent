@@ -151,7 +151,7 @@ class NQEnv(gym.Env):
             self._raw_screenshot = screenshot
             return self._state, 0.0, False, {}
 
-        if self._stage == GameStage.game_over_sorry:
+        if self._stage == GameStage.game_over_not_enough_tokens_sorry:
             self.press_spacebar()
             time.sleep(0.1)
             screenshot, stage_enum = self.take_screenshot_save_to_selfstate()

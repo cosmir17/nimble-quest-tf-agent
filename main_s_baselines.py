@@ -1,10 +1,10 @@
-from stable_baselines import PPO2
-# from stable_baselines import A2C
-from stable_baselines.common.cmd_util import DummyVecEnv
-from stable_baselines.common.evaluation import evaluate_policy
-# from stable_baselines.a2c.policies import CnnPolicy
-from stable_baselines.common.policies import CnnPolicy
-from stable_baselines.common.env_checker import check_env
+from stable_baselines3 import PPO
+# from stable_baselines3 import A2C
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.evaluation import evaluate_policy
+# from stable_baselines3.a2c.policies import CnnPolicy
+from stable_baselines3.common.policies import ActorCriticCnnPolicy
+from stable_baselines3.common.env_checker import check_env
 from nq_environment_baselines import *
 from power_switch import *
 
@@ -20,36 +20,36 @@ run_terminator_listener()
 
 env = DummyVecEnv([lambda: NQEnv()])
 # Train the agent
-model = PPO2(CnnPolicy, env, verbose=2).learn(total_timesteps=50000, log_interval=50000)
+model = PPO(ActorCriticCnnPolicy, env, verbose=2).learn(total_timesteps=50000, log_interval=50000)
 model.save("nimble_quest_stable_baselines_ppo_20000_1")
 
 
 # for i in range(30):
 #     if i == 0:
-#         model = PPO2.load("nimble_quest_stable_baselines_ppo_20000", tensorboard_log="my_tf_board")
+#         model = PPO.load("nimble_quest_stable_baselines_ppo_20000", tensorboard_log="my_tf_board")
 #     else:
-#         model = PPO2.load("nimble_quest_stable_baselines_ppo_20000_" + str(i), tensorboard_log="my_tf_board")
+#         model = PPO.load("nimble_quest_stable_baselines_ppo_20000_" + str(i), tensorboard_log="my_tf_board")
 #     model.set_env(env)
 #     model.learn(total_timesteps=20000, log_interval=1, reset_num_timesteps=False)
 #     model.save("nimble_quest_stable_baselines_ppo_20000_" + str(i + 1))
 #     mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
-model = PPO2.load("nimble_quest_stable_baselines_ppo_20000_1", tensorboard_log="my_tf_board")
+model = PPO.load("nimble_quest_stable_baselines_ppo_20000_1", tensorboard_log="my_tf_board")
 model.set_env(env)
 model.learn(total_timesteps=30000, log_interval=30000, reset_num_timesteps=False)
 model.save("nimble_quest_stable_baselines_ppo_20000_2")
 
-model = PPO2.load("nimble_quest_stable_baselines_ppo_20000_2", tensorboard_log="my_tf_board")
+model = PPO.load("nimble_quest_stable_baselines_ppo_20000_2", tensorboard_log="my_tf_board")
 model.set_env(env)
 model.learn(total_timesteps=30000, log_interval=30000, reset_num_timesteps=False)
 model.save("nimble_quest_stable_baselines_ppo_20000_3")
 
-model = PPO2.load("nimble_quest_stable_baselines_ppo_20000_3", tensorboard_log="my_tf_board")
+model = PPO.load("nimble_quest_stable_baselines_ppo_20000_3", tensorboard_log="my_tf_board")
 model.set_env(env)
 model.learn(total_timesteps=30000, log_interval=30000, reset_num_timesteps=False)
 model.save("nimble_quest_stable_baselines_ppo_20000_4")
 
-model = PPO2.load("nimble_quest_stable_baselines_ppo_20000_4", tensorboard_log="my_tf_board")
+model = PPO.load("nimble_quest_stable_baselines_ppo_20000_4", tensorboard_log="my_tf_board")
 model.set_env(env)
 model.learn(total_timesteps=30000, log_interval=30000, reset_num_timesteps=False)
 model.save("nimble_quest_stable_baselines_ppo_20000_5")

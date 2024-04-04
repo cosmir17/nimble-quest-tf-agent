@@ -11,7 +11,7 @@ The Nimble Quest AI Bot is built using the Stable Baselines library and trained 
 
 Check out the video below to see the trained agent in action:
 
-Nimble Quest AI Bot Gameplay
+Nimble Quest AI Bot Youtube Gameplay (clicking the image below leads to a Youtube page)
 
 <div align="left">
       <a href="https://youtube.com/watch?v=1XVm8lRQOK4">
